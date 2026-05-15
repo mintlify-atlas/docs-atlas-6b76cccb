@@ -1,0 +1,214 @@
+---
+title: "MongoDB database setup for FlagForge"
+description: "FlagForge uses MongoDB to store users, challenges, submissions, and badges. Learn how to set up, connect, and understand the data models."
+---
+
+FlagForge stores all of its data in MongoDB — player accounts, CTF challenges, flag submissions, badges, and more. You can connect FlagForge to a managed MongoDB Atlas cluster or to a self-hosted MongoDB instance. Mongoose handles the database connection and automatically creates collections and indexes when the application starts.
+
+## Choosing a MongoDB option
+
+<CardGroup cols={2}>
+  <Card title="MongoDB Atlas (recommended)" icon="cloud">
+    A fully managed cloud database. Atlas handles backups, scaling, and high availability. The free M0 tier is sufficient for small events and development.
+  </Card>
+  <Card title="Self-hosted MongoDB" icon="server">
+    Run MongoDB on your own infrastructure. Gives you full control but requires you to manage upgrades, backups, and networking yourself.
+  </Card>
+</CardGroup>
+
+<Tip>
+  MongoDB Atlas's free M0 tier provides 512 MB of storage and shared compute — more than enough to run a small-to-medium CTF event with a few hundred participants. You can upgrade to a paid tier as your event grows.
+</Tip>
+
+## Setting up MongoDB Atlas
+
+<Steps>
+  <Step title="Create an Atlas account">
+    Go to [mongodb.com/atlas](https://www.mongodb.com/atlas) and sign up for a free account.
+  </Step>
+
+  <Step title="Create a cluster">
+    Click **Build a Cluster** and select the **Free** (M0) tier. Choose a cloud provider and region close to your server.
+  </Step>
+
+  <Step title="Create a database user">
+    In **Database Access**, create a new user with a strong password. Grant the user **Read and Write to any database** privileges.
+  </Step>
+
+  <Step title="Allow network access">
+    In **Network Access**, add your server's IP address to the IP allowlist. To allow access from anywhere (useful for development), add `0.0.0.0/0`.
+  </Step>
+
+  <Step title="Get your connection string">
+    Click **Connect** on your cluster, then choose **Drivers**. Copy the connection string and replace `<password>` with your database user's password and append the database name:
+
+    ```
+    mongodb+srv://username:password@cluster.mongodb.net/flagforge
+    ```
+
+    Set this as your `MONGO_URL` environment variable.
+  </Step>
+</Steps>
+
+## Connection string format
+
+```
+mongodb+srv://username:password@cluster.mongodb.net/flagforge
+```
+
+| Part | Description |
+|------|-------------|
+| `username` | The database user you created in Atlas or your self-hosted MongoDB |
+| `password` | The database user's password (URL-encode special characters) |
+| `cluster.mongodb.net` | Your Atlas cluster hostname, or your server's hostname for self-hosted |
+| `flagforge` | The database name (FlagForge creates it automatically on first run) |
+
+<Note>
+  FlagForge's database connection uses a connection pool with up to 10 connections and a 30-second idle timeout. The pool is reused across Next.js hot reloads in development, so you won't exhaust your Atlas connection limit during local development.
+</Note>
+
+## Collections
+
+FlagForge creates the following collections automatically when the application first connects. You do not need to create them manually.
+
+### `users`
+
+Stores player accounts created when a user signs in with Google for the first time.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | String | Display name from Google |
+| `email` | String | Google account email (unique, lowercase) |
+| `image` | String | Profile photo URL from Google |
+| `role` | String | `"User"` or `"Admin"` |
+| `totalScore` | Number | Cumulative points earned across all solved challenges |
+| `customBadges` | Array | Inline badge records assigned directly to this user |
+| `createdAt` | Date | Account creation timestamp |
+| `updatedAt` | Date | Last modification timestamp |
+
+---
+
+### `questions`
+
+Stores CTF challenges created by admins.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | String | Challenge title |
+| `description` | String | Challenge description (supports Markdown) |
+| `category` | String | Challenge category (e.g., Web, Crypto, Forensics) |
+| `points` | Number | Points awarded for solving |
+| `flag` | String | Flag string or dynamic flag template |
+| `hints` | Array | Array of hints, each with `text` and `pointsDeduction` |
+| `challengeType` | String | `"link"` or `"file"` |
+| `link` | String | URL to challenge resource (if type is `link`) |
+| `challengeFile` | String | Path to challenge file (if type is `file`) |
+| `isTimeLimited` | Boolean | Whether the challenge has an expiry date |
+| `expiryDate` | Date | When the challenge expires (if time-limited) |
+| `uploadedBy` | String | Email of the admin who created the challenge |
+| `createdAt` | Date | Creation timestamp |
+| `updatedAt` | Date | Last modification timestamp |
+
+Indexes: compound index on `(category, points)` for filtered queries; index on `expiryDate` for expiry lookups.
+
+---
+
+### `userquestions`
+
+Records each solved challenge per user. A document is created here when a user successfully submits the correct flag.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | ObjectId | Reference to the `users` collection |
+| `questionId` | ObjectId | Reference to the `questions` collection |
+| `createdAt` | Date | Timestamp of when the challenge was solved |
+
+---
+
+### `assignedbadges`
+
+Tracks badge assignments from admins to users.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | The recipient user's ID |
+| `badgeId` | Mixed | ID of the badge template or custom badge |
+| `badgeType` | String | `"template"` or `"custom"` |
+| `assignedBy` | String | Admin who assigned the badge |
+| `reason` | String | Optional reason for the assignment |
+| `isActive` | Boolean | Whether the badge is currently active |
+| `badgeName` | String | Display name (denormalized for performance) |
+| `badgeDescription` | String | Display description (denormalized) |
+| `badgeIcon` | String | Icon identifier (denormalized) |
+| `badgeColor` | String | Hex color (denormalized) |
+| `assignedAt` | Date | Assignment timestamp |
+
+Indexes: unique compound index on `(userId, badgeId, isActive)` with a partial filter to prevent duplicate active assignments.
+
+---
+
+### `badgetemplates`
+
+Stores reusable badge definitions that admins can assign to multiple users.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | String | Badge name (unique) |
+| `description` | String | Badge description |
+| `icon` | String | Icon identifier |
+| `color` | String | Hex color (default `#8B5CF6`) |
+| `isActive` | Boolean | Whether the template is available for assignment |
+| `createdBy` | String | Admin who created the template |
+| `createdAt` | Date | Creation timestamp |
+
+---
+
+### `dynamicflags`
+
+Stores per-user generated flags for dynamic flag challenges. Each document expires automatically after 24 hours.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | The player's user ID |
+| `questionId` | String | The challenge ID this flag belongs to |
+| `flag` | String | The generated flag string |
+| `expiresAt` | Date | Expiry timestamp (24 hours from generation) |
+
+Indexes: compound index on `(userId, questionId)` for fast lookups; TTL index on `expiresAt` — MongoDB automatically deletes expired documents.
+
+<Note>
+  Dynamic flags are deleted immediately after a successful submission, in addition to the 24-hour TTL. If a player's flag expires before they submit it, they can generate a new one by clicking **Start Challenge** again.
+</Note>
+
+---
+
+### `tokenblacklists`
+
+Stores revoked JWT token IDs (JTI) to prevent reuse of signed-out session tokens.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `jti` | String | JWT ID of the revoked token (unique, indexed) |
+| `userId` | String | The user who owned the token (optional) |
+| `expiresAt` | Date | When the original token would have expired |
+| `blacklistedAt` | Date | When the token was revoked |
+
+Expired blacklist entries are automatically removed after a 90-day grace period via a TTL index on `expiresAt`.
+
+---
+
+## Database indexes summary
+
+FlagForge creates the following indexes automatically via Mongoose schema definitions:
+
+| Collection | Index | Type | Purpose |
+|------------|-------|------|---------|
+| `questions` | `(category, points)` | Compound | Filtered challenge queries |
+| `questions` | `expiryDate` | Single field | Time-limited challenge lookups |
+| `dynamicflags` | `(userId, questionId)` | Compound | Fast per-user flag lookups |
+| `dynamicflags` | `expiresAt` | TTL | Auto-delete expired flags after 24h |
+| `assignedbadges` | `(userId, badgeId, isActive)` | Unique partial | Prevent duplicate active assignments |
+| `assignedbadges` | `(userId, isActive)` | Compound | User badge queries |
+| `tokenblacklists` | `jti` | Single field | Fast token revocation checks |
+| `tokenblacklists` | `(jti, expiresAt)` | Compound | Efficient blacklist validation |
+| `tokenblacklists` | `expiresAt` | TTL | Auto-delete entries after 90 days |

@@ -1,0 +1,90 @@
+---
+title: "Create and assign badges to FlagForge users"
+description: "Admins can create badge templates, upload badge images, and assign custom badges to recognize player achievements and contributions in FlagForge."
+icon: "award"
+---
+
+Badges let you recognize players for achievements, contributions, or participation beyond the standard score-based leaderboard. As an admin, you create badge templates that define the badge's appearance, upload images to use as badge icons, and then assign those badges to individual players.
+
+## Badge templates
+
+A badge template is the reusable definition for a badge. When you assign a badge to a player, the template's details are copied to the player's profile.
+
+Each template has the following fields:
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | Yes | A unique display name for the badge. |
+| `description` | Yes | A short explanation of what the badge represents. |
+| `icon` | Yes | The icon shown with the badge — typically an emoji, icon name, or image path. |
+| `color` | No | A hex color code for the badge accent. Defaults to `#8B5CF6`. |
+
+<Note>
+  Badge template names must be unique across the platform. Attempting to create a second template with the same name returns a `400` error.
+</Note>
+
+You can also toggle a template's **active** status. Inactive templates (`isActive: false`) are hidden from the assignment UI but remain in the database.
+
+## Uploading badge images
+
+You can upload custom image files to use as badge icons. The badge image uploader accepts the following formats:
+
+**Allowed formats:** PNG, JPG, WebP, SVG, GIF
+
+**Maximum file size:** 5 MB
+
+Uploaded images are stored at `/badges/custom/<filename>` and saved with a unique timestamped filename to prevent collisions. Once uploaded, you can reference the image path in a badge template's `icon` field.
+
+<Tip>
+  SVG files work best for badge icons because they scale cleanly at any size. Use a transparent background for icons that will appear on both light and dark profile themes.
+</Tip>
+
+## Assigned badge fields
+
+When you assign a badge to a player, the following fields are recorded on the assignment:
+
+| Field | Description |
+|---|---|
+| `userId` | The ID of the player receiving the badge. |
+| `badgeName` | The name of the badge, copied from the template at assignment time. |
+| `badgeDescription` | The description, copied from the template. |
+| `badgeIcon` | The icon path or value, copied from the template. |
+| `badgeColor` | The hex color, copied from the template. |
+| `assignedBy` | The email or identifier of the admin who assigned the badge. |
+| `reason` | An optional note explaining why the badge was awarded. |
+
+Badges appear on the player's public profile page. Each player can hold multiple badges, but the same badge can only be assigned once per player — duplicate assignments are rejected.
+
+## Where badges appear
+
+Assigned badges are displayed on the player's **profile page**. They are also stored in the `customBadges` array on the user document, which is used by the leaderboard and profile views to render badge icons inline.
+
+## Assigning a badge to a player
+
+<Steps>
+  <Step title="Open the badge management panel">
+    Sign in with an **Admin** account and navigate to the **Badges** section at `/roles/developers/admins`.
+  </Step>
+  <Step title="Create a badge template (if needed)">
+    Click **New template** and fill in the **name**, **description**, and **icon** fields. Optionally set a **color** hex code. Click **Save template**.
+  </Step>
+  <Step title="Upload a badge image (optional)">
+    Click **Upload image** and select a PNG, JPG, WebP, SVG, or GIF file up to 5 MB. After the upload completes, copy the image path and use it as the `icon` value in your template.
+  </Step>
+  <Step title="Select the player">
+    In the **Assign badge** form, search for the player by name or email and select their account from the list.
+  </Step>
+  <Step title="Select the badge template">
+    Choose the template you want to assign from the dropdown. You can see the badge's name, description, and color preview before confirming.
+  </Step>
+  <Step title="Add an optional reason">
+    Enter a short note in the **Reason** field explaining why the badge is being awarded. This note is stored on the assignment record and visible to admins.
+  </Step>
+  <Step title="Confirm the assignment">
+    Click **Assign badge**. The badge is added to the player's profile immediately.
+  </Step>
+</Steps>
+
+## Removing a badge
+
+To revoke a badge, find the assignment in the admin panel and click **Remove**. FlagForge performs a soft delete — the assignment record is marked as inactive (`isActive: false`) rather than permanently deleted — and the badge is removed from the player's profile.

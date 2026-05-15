@@ -1,0 +1,132 @@
+---
+title: "Contribute to FlagForge open-source development"
+description: "Learn how to contribute to FlagForge by reporting bugs, suggesting features, writing code, and improving documentation. All contributions are welcome."
+icon: "code-pull-request"
+---
+
+FlagForge is an open-source CTF platform, and contributions from the community make it better for everyone. Whether you want to report a bug, propose a new feature, submit code, or improve the docs, your help is welcome and appreciated.
+
+## Code of Conduct
+
+All contributors are expected to follow the [FlagForge Code of Conduct](https://github.com/aryan4859/flagForge/blob/mainv2/CODE_OF_CONDUCT.md). It outlines the standards for respectful, inclusive participation in the project. By taking part in this community, you agree to uphold those standards.
+
+## Ways to contribute
+
+<CardGroup cols={2}>
+  <Card title="Report a bug" icon="bug">
+    Open a GitHub Issue describing the problem, reproduction steps, and your environment.
+  </Card>
+  <Card title="Suggest a feature" icon="lightbulb">
+    Open a GitHub Issue with a clear description of the enhancement and why it benefits most users.
+  </Card>
+  <Card title="Submit code" icon="code">
+    Fork the repository, create a branch, make your changes, and open a pull request.
+  </Card>
+  <Card title="Improve docs" icon="book-open">
+    Fix typos, clarify explanations, or add missing information to the documentation.
+  </Card>
+</CardGroup>
+
+## Reporting bugs
+
+Before opening a bug report, check the [existing issues](https://github.com/aryan4859/flagForge/issues?q=label%3Abug) to see if someone has already reported the same problem. If a duplicate exists, add a comment with any additional context rather than opening a new issue.
+
+When you open a new issue, include:
+
+- A clear description of the expected behavior and what actually happens
+- Step-by-step reproduction instructions
+- Your **operating system** and version (e.g., Ubuntu 22.04, macOS 14, Windows 11)
+- Your **Node.js version** (run `node --version`)
+- Any relevant error messages or stack traces
+
+<Warning>
+  Never report security vulnerabilities through public GitHub Issues. See the [Security vulnerabilities](#security-vulnerabilities) section below for the correct reporting process.
+</Warning>
+
+## Suggesting features
+
+Enhancement suggestions are tracked as [GitHub Issues](https://github.com/aryan4859/flagForge/issues). Before submitting, search open issues to avoid duplicates — if your idea already exists, upvote or comment on the existing issue.
+
+A good feature request includes:
+
+- A **clear and descriptive title**
+- A description of the **current behavior** and the **behavior you expect** instead
+- An explanation of **why this benefits most FlagForge users**
+- Screenshots or screen recordings if relevant
+
+## Making a code contribution
+
+<Steps>
+  <Step title="Fork the repository on GitHub">
+    Navigate to [github.com/aryan4859/flagForge](https://github.com/aryan4859/flagForge) and click **Fork** to create your own copy of the repository.
+  </Step>
+  <Step title="Clone your fork">
+    Clone the forked repository to your local machine:
+
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/flagForge
+    ```
+  </Step>
+  <Step title="Create a feature branch">
+    Create a dedicated branch for your changes. Use a descriptive name that reflects your work:
+
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+  </Step>
+  <Step title="Make your changes">
+    Implement your fix or feature. Keep commits focused — one logical change per commit makes review easier.
+
+    <Tip>
+      Read the [architecture overview](/contributing/architecture) to understand how the codebase is structured before making changes.
+    </Tip>
+  </Step>
+  <Step title="Run linting">
+    Ensure your code passes the linter before committing:
+
+    ```bash
+    npm run lint
+    ```
+
+    Fix any reported issues before proceeding.
+  </Step>
+  <Step title="Commit with a descriptive message">
+    Write a commit message that explains **what** changed and **why**:
+
+    ```bash
+    git commit -m "feat: add rate limiting to flag submission endpoint"
+    ```
+  </Step>
+  <Step title="Push and open a pull request">
+    Push your branch to your fork and open a pull request against the main FlagForge repository:
+
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+
+    In your pull request description, explain the problem you're solving, link any related issues, and describe how you tested your changes.
+  </Step>
+</Steps>
+
+## Improving documentation
+
+Documentation contributions follow the same fork-and-PR workflow as code. You can fix typos, clarify confusing explanations, add missing steps, or improve code examples. Even small improvements help other contributors and users.
+
+<Info>
+  When contributing code, you confirm that you authored 100% of the content, hold the necessary rights to it, and agree that it may be provided under the project's license.
+</Info>
+
+## Security vulnerabilities
+
+Do not report security vulnerabilities through public GitHub Issues. Instead, send a private email to **contact@aryan4.com.np** with:
+
+1. A description of the vulnerability
+2. Steps to reproduce
+3. Potential impact assessment
+4. Proof of concept (if applicable)
+
+The team will acknowledge your report within 24 hours and provide weekly updates throughout the investigation.
+
+## License
+
+FlagForge is licensed under the **GPL-3.0** license. All contributions you submit must be compatible with this license. By opening a pull request, you agree that your contribution may be distributed under GPL-3.0 terms.

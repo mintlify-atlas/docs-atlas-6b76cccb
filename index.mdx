@@ -1,133 +1,76 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
-icon: 'star'
+title: "FlagForge: Beginner-Friendly CTF Platform"
+description: "FlagForge is an open-source Capture The Flag platform for hosting and solving cybersecurity challenges with real-time leaderboards, badges, and dynamic flags."
 ---
 
-## Setting up
+FlagForge is a beginner-friendly, open-source CTF (Capture The Flag) platform that makes it easy to host, manage, and participate in cybersecurity challenges. Whether you're a player looking to sharpen your skills or an organizer running a competition, FlagForge provides the tools you need — from a challenge library with hints to a real-time leaderboard and a dynamic per-user flag system that prevents flag sharing.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up FlagForge and start solving your first challenge in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Core Features" icon="flag" href="/features/challenges">
+    Explore challenges, flag submission, dynamic flags, leaderboards, and badges.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Admin Guide" icon="shield-halved" href="/admin/overview">
+    Manage challenges, users, and badges from the admin dashboard.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Integrate with FlagForge programmatically using the REST API.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What is FlagForge?
 
-Everything you need to create world-class documentation.
+FlagForge is a full-stack CTF platform built with Next.js, TypeScript, and MongoDB. It's designed to be approachable for beginners while providing the depth that experienced players and organizers expect.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={3}>
+  <Card title="Dynamic Flags" icon="key">
+    Per-user unique flags prevent sharing and ensure fair scoring, with GUID, team hash, and leet-speak variants.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Real-Time Leaderboard" icon="ranking-star">
+    Track scores and rank across all participants as challenges are solved.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Badge System" icon="medal">
+    Earn and display badges for achievements, roles, and milestones.
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Hints" icon="lightbulb">
+    Configurable per-challenge hints with adjustable point deductions.
   </Card>
-</Columns>
+  <Card title="Time-Limited Challenges" icon="clock">
+    Set expiry dates on challenges to create event-style competitions.
+  </Card>
+  <Card title="Discord Integration" icon="discord">
+    Automatic notifications to your Discord server when new challenges are released.
+  </Card>
+</CardGroup>
 
-## Make your content agent ready
+## Get started
 
-Make your docs work for humans and AI agents alike.
+<Steps>
+  <Step title="Create your account">
+    Sign up at [flagforgectf.com](https://flagforgectf.com) using Google OAuth or visit a self-hosted instance. Your profile tracks your score, solved challenges, and earned badges.
+  </Step>
+  <Step title="Browse challenges">
+    Head to the **Problems** page to see all available challenges. Filter by category — Web, Crypto, Forensics, Pwn, and more — to find challenges that match your skill level.
+  </Step>
+  <Step title="Solve and submit your flag">
+    Open a challenge, read the description, and download any attached files. Once you find the flag, enter it in the submission box. Flags follow the format `flag{...}`.
+  </Step>
+  <Step title="Track your progress">
+    Watch your score update on the **Leaderboard** and check your **Profile** to see solved challenges, earned badges, and your ranking among other players.
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Prompt component"
-    icon="robot"
-    href="/agent-ready/prompt"
-  >
-    Embed shareable AI prompts readers can copy or open in Cursor.
-  </Card>
-  <Card
-    title="Visibility"
-    icon="eye"
-    href="/agent-ready/visibility"
-  >
-    Show different content to humans and agents reading your docs.
-  </Card>
-  <Card
-    title="Contextual menu"
-    icon="bolt"
-    href="/agent-ready/contextual"
-  >
-    Give readers one-click access to Claude, ChatGPT, Cursor, and more.
-  </Card>
-  <Card
-    title="AI coding tools"
-    icon="wand-magic-sparkles"
-    href="/ai-tools/claude-code"
-  >
-    Set up Claude Code, Cursor, or Windsurf with Mintlify's skill.
-  </Card>
-</Columns>
+## Self-hosting
 
-## Need inspiration?
+FlagForge is fully open-source under the GPL-3.0 license. You can deploy your own instance to run private CTF events for your organization, club, or classroom.
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Deployment guide" icon="server" href="/self-hosting/deployment">
+    Step-by-step instructions for setting up your own FlagForge instance.
+  </Card>
+  <Card title="Environment variables" icon="gear" href="/self-hosting/environment-variables">
+    Configure authentication, database, and integrations for your deployment.
+  </Card>
+</CardGroup>

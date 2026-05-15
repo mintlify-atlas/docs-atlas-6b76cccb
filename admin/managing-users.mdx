@@ -1,0 +1,66 @@
+---
+title: "Manage users and roles in FlagForge"
+description: "Admin users can view all registered players, inspect their scores and solved challenges, and update user roles in the FlagForge admin panel."
+icon: "users"
+---
+
+The FlagForge admin panel gives you a full view of every registered player on your platform. You can review scores, see how many challenges each player has solved, inspect assigned badges, and control which accounts hold admin privileges.
+
+## Viewing all users
+
+Navigate to the **Users** section of the admin panel at `/roles/developers/admins`. The panel fetches all user accounts from the database, sorted by total score in descending order so your top players appear first.
+
+Each row in the user list shows:
+
+| Field | Description |
+|---|---|
+| `name` | The player's display name. |
+| `email` | The player's email address. |
+| `role` | Either `"User"` or `"Admin"`. |
+| `totalScore` | The cumulative points earned from solved challenges. |
+| `customBadges` | The list of badges assigned to the account. |
+| `completedQuestions` | The count of challenges the player has solved. |
+
+<Note>
+  The user list is sorted by `totalScore` descending, which mirrors the order shown on the public leaderboard. Use this view to quickly identify top performers or inactive accounts.
+</Note>
+
+## Role system
+
+FlagForge has two roles:
+
+- **`User`** — The default role assigned to all new registrations. Players with this role can browse and solve challenges, submit flags, view the leaderboard, and earn badges.
+- **`Admin`** — Grants full access to the admin panel, including challenge management, user management, badge assignment, and dashboard statistics.
+
+### Setting a role
+
+**Via environment variable** — Set `NEXT_PUBLIC_ADMIN_EMAIL` to the email address of the account you want to promote. FlagForge checks this value during sign-in and assigns the `Admin` role automatically.
+
+**Via the database** — Connect to your MongoDB instance and update the `role` field on the target user document directly:
+
+```javascript
+db.users.updateOne(
+  { email: "admin@example.com" },
+  { $set: { role: "Admin" } }
+)
+```
+
+<Warning>
+  Downgrading your own admin account will immediately revoke your access to the admin panel. Make sure at least one other admin account exists before changing your own role.
+</Warning>
+
+## Token revocation
+
+If you need to terminate an active session — for example, after a security incident or a role change — you can revoke a user's session token via the `/api/auth/revoke-token` endpoint. Revoking a token forces the user to sign in again before they can access any authenticated routes.
+
+<Info>
+  Role changes take effect on the user's next sign-in. The current session token reflects the role at the time of authentication. Revoking the token ensures the updated role is applied immediately.
+</Info>
+
+## User data and privacy
+
+The admin users endpoint (`GET /api/admin/users`) returns only the fields needed for administration: `name`, `email`, `image`, `totalScore`, `customBadges`, and `createdAt`. Sensitive fields such as password hashes and OAuth tokens are never included in the response.
+
+<Tip>
+  Avoid storing or exporting the full user list unless necessary for your event. Treat email addresses and score data as personally identifiable information (PII) and handle them according to your organization's data privacy policy.
+</Tip>

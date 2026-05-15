@@ -1,0 +1,383 @@
+---
+title: "Challenges API — browse and retrieve CTF problems"
+description: "GET /api/problems lists challenges with pagination and category filtering. GET /api/problems/[id] retrieves a single challenge. POST creates one (admin)."
+---
+
+The challenges API gives you programmatic access to every CTF problem on the platform. You can browse challenges with pagination and category filtering, retrieve a single challenge by its ID, and — if your account has the `Admin` role — create new challenges. The flag field is never returned by any read endpoint, keeping challenge answers safe.
+
+## GET /api/problems
+
+List challenges. No authentication is required. Results are sorted newest-first and paginated.
+
+### Query parameters
+
+<ParamField query="page" type="number" default="1">
+  The page number to retrieve. Starts at `1`.
+</ParamField>
+
+<ParamField query="limit" type="number" default="8">
+  Number of challenges per page. Maximum value is `1000`. Pass a large value (e.g. `1000`) to retrieve all challenges in a single request.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by challenge category. Pass `All` or omit this parameter to return challenges from all categories. Pass a specific category name (e.g. `Web`, `Crypto`) to filter results.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="object[]">
+  Array of challenge objects. The `flag` field is excluded from all objects in this array.
+
+  <Expandable title="Challenge object fields">
+    <ResponseField name="_id" type="string">
+      Unique MongoDB identifier for the challenge.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Display title of the challenge.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Full description of the challenge, including context and instructions.
+    </ResponseField>
+    <ResponseField name="category" type="string">
+      Category label, for example `Web`, `Crypto`, or `Forensics`.
+    </ResponseField>
+    <ResponseField name="points" type="number">
+      Point value awarded for solving the challenge.
+    </ResponseField>
+    <ResponseField name="addilinks" type="string">
+      Optional additional reference links provided by the challenge author.
+    </ResponseField>
+    <ResponseField name="link" type="string">
+      URL to an external resource for link-type challenges.
+    </ResponseField>
+    <ResponseField name="challengeFile" type="string">
+      Server path to a downloadable file for file-type challenges (e.g. `/challenges/files/challenge-123.zip`).
+    </ResponseField>
+    <ResponseField name="challengeType" type="string">
+      Either `link` or `file`, indicating how the challenge resource is delivered.
+    </ResponseField>
+    <ResponseField name="hints" type="number">
+      Count of hints available for the challenge. The hint text itself is not included here.
+    </ResponseField>
+    <ResponseField name="isTimeLimited" type="boolean">
+      Whether the challenge has an expiry date.
+    </ResponseField>
+    <ResponseField name="timeLimit" type="number">
+      Duration of the time limit in `timeLimitUnit` units. Only present when `isTimeLimited` is `true`.
+    </ResponseField>
+    <ResponseField name="timeLimitUnit" type="string">
+      Unit for `timeLimit`. One of `hours`, `days`, or `weeks`.
+    </ResponseField>
+    <ResponseField name="expiryDate" type="string">
+      ISO 8601 date string at which the challenge expires. `null` if the challenge has no expiry.
+    </ResponseField>
+    <ResponseField name="expired" type="boolean">
+      `true` if `expiryDate` is in the past at the time of the request.
+    </ResponseField>
+    <ResponseField name="timeRemaining" type="number">
+      Milliseconds remaining until `expiryDate`. `null` if there is no expiry date.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp when the challenge was created.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp when the challenge was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalScore" type="number">
+  The authenticated user's current total score. Returns `0` when the request is made without a session.
+</ResponseField>
+
+<ResponseField name="questionDone" type="object[]">
+  Array of `UserQuestion` records representing challenges the authenticated user has already solved. Returns an empty array when the request is made without a session.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata for the current result set.
+
+  <Expandable title="Pagination object fields">
+    <ResponseField name="page" type="number">
+      The current page number.
+    </ResponseField>
+    <ResponseField name="limit" type="number">
+      The number of results per page used for this response.
+    </ResponseField>
+    <ResponseField name="total" type="number">
+      Total number of challenges matching the applied category filter.
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages at the current `limit`.
+    </ResponseField>
+    <ResponseField name="hasNext" type="boolean">
+      `true` if there is at least one more page after the current one.
+    </ResponseField>
+    <ResponseField name="hasPrev" type="boolean">
+      `true` if the current page is not the first page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/problems?page=1&limit=8&category=Web"
+```
+
+```json
+{
+  "data": [
+    {
+      "_id": "665a1f2e3c4b5d6e7f8a9b0c",
+      "title": "SQL Injection 101",
+      "description": "Find the flag hidden behind a vulnerable login form.",
+      "category": "Web",
+      "points": 100,
+      "challengeType": "link",
+      "link": "https://challenge.flagforgectf.com/sqli-101",
+      "hints": 2,
+      "isTimeLimited": false,
+      "expiryDate": null,
+      "expired": false,
+      "timeRemaining": null,
+      "createdAt": "2024-06-01T10:00:00.000Z",
+      "updatedAt": "2024-06-01T10:00:00.000Z"
+    }
+  ],
+  "totalScore": 250,
+  "questionDone": [],
+  "pagination": {
+    "page": 1,
+    "limit": 8,
+    "total": 42,
+    "totalPages": 6,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+---
+
+## GET /api/problems/[id]
+
+Retrieve a single challenge by its MongoDB ID. No authentication is required, but the response includes user-specific fields (`isDone`, `usedHints`) when a valid session cookie is present.
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The MongoDB `_id` of the challenge.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="question" type="object">
+  The challenge object. The `flag` and `hints` fields are stripped from this object — use the hint count in `hintCount` and the hints endpoint for hint text.
+</ResponseField>
+
+<ResponseField name="hintCount" type="number">
+  Number of hints available for this challenge. Only hints with non-empty text are counted.
+</ResponseField>
+
+<ResponseField name="isDone" type="boolean">
+  `true` if the authenticated user has already solved this challenge. Always `false` when the request is unauthenticated.
+</ResponseField>
+
+<ResponseField name="expired" type="boolean">
+  `true` if the challenge's `expiryDate` is in the past.
+</ResponseField>
+
+<ResponseField name="timeRemaining" type="number">
+  Milliseconds remaining until `expiryDate`. `null` if there is no expiry date.
+</ResponseField>
+
+<ResponseField name="expiryDate" type="string">
+  ISO 8601 expiry date, or `null` if the challenge does not expire.
+</ResponseField>
+
+<ResponseField name="usedHints" type="number[]">
+  Array of hint indices the authenticated user has already unlocked. Empty array when unauthenticated.
+</ResponseField>
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `404 Not Found` | No challenge exists with the given `id`. |
+| `410 Gone` | The challenge existed but has expired. |
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/problems/665a1f2e3c4b5d6e7f8a9b0c"
+```
+
+```json
+{
+  "question": {
+    "_id": "665a1f2e3c4b5d6e7f8a9b0c",
+    "title": "SQL Injection 101",
+    "description": "Find the flag hidden behind a vulnerable login form.",
+    "category": "Web",
+    "points": 100,
+    "challengeType": "link",
+    "link": "https://challenge.flagforgectf.com/sqli-101",
+    "isTimeLimited": false,
+    "expiryDate": null,
+    "createdAt": "2024-06-01T10:00:00.000Z",
+    "updatedAt": "2024-06-01T10:00:00.000Z"
+  },
+  "hintCount": 2,
+  "isDone": false,
+  "expired": false,
+  "timeRemaining": null,
+  "expiryDate": null,
+  "usedHints": []
+}
+```
+
+---
+
+## POST /api/problems
+
+Create a new challenge. Requires the `Admin` role.
+
+<Warning>
+This endpoint requires an active Admin session. Requests from unauthenticated users or non-Admin accounts return `401 Unauthorized`.
+</Warning>
+
+The endpoint accepts two content types depending on whether the challenge has a file attachment:
+
+- **`application/json`** — for link-based challenges where the resource lives at an external URL.
+- **`multipart/form-data`** — for file-based challenges where you upload a challenge file directly.
+
+### Request fields (JSON or form-data)
+
+<ParamField body="title" type="string" required>
+  Display title of the challenge.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Full challenge description shown to participants.
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Challenge category, for example `Web`, `Crypto`, or `Pwn`.
+</ParamField>
+
+<ParamField body="points" type="number" required>
+  Point value awarded to the first solver (before any hint penalties).
+</ParamField>
+
+<ParamField body="flag" type="string" required>
+  The correct flag string. This value is stored securely and never returned by the API.
+</ParamField>
+
+<ParamField body="link" type="string">
+  URL to the external challenge resource. Used for link-type challenges.
+</ParamField>
+
+<ParamField body="addilinks" type="string">
+  Optional supplementary links for participants (e.g. reference materials).
+</ParamField>
+
+<ParamField body="hints" type="string">
+  JSON-encoded array of hint objects. Each hint object should include `text`, `content`, `description`, and `pointsDeduction` fields.
+</ParamField>
+
+<ParamField body="isTimeLimited" type="boolean">
+  Set to `true` to give the challenge an expiry date.
+</ParamField>
+
+<ParamField body="timeLimit" type="number">
+  Duration of the time limit in `timeLimitUnit` units.
+</ParamField>
+
+<ParamField body="timeLimitUnit" type="string">
+  One of `hours`, `days`, or `weeks`.
+</ParamField>
+
+<ParamField body="expiryDate" type="string">
+  An explicit expiry date in ISO 8601 format. Overrides the `timeLimit` / `timeLimitUnit` calculation when provided.
+</ParamField>
+
+<ParamField body="challengeFile" type="file">
+  The file to upload. Only accepted when `Content-Type` is `multipart/form-data`. Allowed types: ZIP, PDF, TXT, PNG, JPG. Maximum size: **50 MB**.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">
+  `true` on success.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable confirmation message, for example `"Your question has been created"`.
+</ResponseField>
+
+### Examples
+
+**Create a link-based challenge (JSON):**
+
+```bash
+curl -X POST "https://flagforgectf.com/api/problems" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=<admin-session>" \
+  -d '{
+    "title": "XSS Playground",
+    "description": "Exploit a reflected XSS vulnerability to steal the admin cookie.",
+    "category": "Web",
+    "points": 150,
+    "flag": "FF{xss_c00ki3_theft}",
+    "link": "https://challenge.flagforgectf.com/xss-playground"
+  }'
+```
+
+**Create a file-based challenge (multipart/form-data):**
+
+```bash
+curl -X POST "https://flagforgectf.com/api/problems" \
+  -H "Cookie: next-auth.session-token=<admin-session>" \
+  -F "title=Reverse Me" \
+  -F "description=Reverse engineer the binary to find the flag." \
+  -F "category=Reversing" \
+  -F "points=200" \
+  -F "flag=FF{r3v3rs3_en9in33r}" \
+  -F "challengeFile=@/path/to/challenge.zip"
+```
+
+```json
+{
+  "success": true,
+  "message": "Your question has been created"
+}
+```
+
+---
+
+## GET /api/categories
+
+Return all challenge categories currently in use on the platform. No authentication is required.
+
+### Response fields
+
+<ResponseField name="categories" type="string[]">
+  Sorted list of distinct category names. Always includes `"All"` as the first entry.
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/categories"
+```
+
+```json
+{
+  "categories": ["All", "Crypto", "Forensics", "Misc", "Pwn", "Reversing", "Web"]
+}
+```
+
+<Note>
+Categories are derived dynamically from the challenges in the database. A category only appears after at least one challenge has been created with that category label.
+</Note>

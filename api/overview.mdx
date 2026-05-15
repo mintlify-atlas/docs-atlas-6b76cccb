@@ -1,0 +1,121 @@
+---
+title: "FlagForge REST API overview and base URL"
+description: "FlagForge exposes a REST API for challenges, flag submission, leaderboards, and user data. Learn about base URLs, request formats, and response conventions."
+---
+
+The FlagForge REST API lets you interact with challenges, flag submissions, leaderboards, and user data programmatically. All API routes are available under the `/api/` path and return JSON responses. You can use the API from any HTTP client, including `curl`, `fetch`, or language-specific libraries.
+
+## Base URL
+
+The hosted FlagForge instance is available at:
+
+```
+https://flagforgectf.com
+```
+
+All API endpoints are rooted at `/api/`:
+
+```
+https://flagforgectf.com/api/
+```
+
+If you are running a self-hosted instance, replace `https://flagforgectf.com` with your own domain throughout this reference.
+
+## Request format
+
+Most endpoints accept **JSON** request bodies. Set the `Content-Type` header accordingly:
+
+```
+Content-Type: application/json
+```
+
+Endpoints that accept file uploads (for example, creating a challenge with an attached file) use **multipart/form-data** instead. The individual endpoint pages note which format each route expects.
+
+## Response format
+
+All responses return **JSON**. Successful responses include the requested data at the top level or nested under a named key (for example, `data`, `pagination`). Error responses include a `message` field describing what went wrong.
+
+```json
+{
+  "message": "Missing required fields: title, points, category, flag, description"
+}
+```
+
+## Authentication
+
+Most read endpoints are publicly accessible. Endpoints that create, update, or delete resources require you to be signed in. FlagForge uses **session-based authentication via NextAuth** — authentication state is carried by an HTTP cookie (`next-auth.session-token`) that NextAuth sets when you sign in. In a browser context, the cookie is sent automatically with every request.
+
+Admin-only endpoints additionally require that your account has the `Admin` role. See [Authentication](/api/authentication) for details.
+
+## HTTP status codes
+
+The API uses standard HTTP status codes to indicate the result of each request.
+
+| Code | Meaning |
+|------|---------|
+| `200 OK` | The request succeeded. |
+| `201 Created` | A resource was created successfully. |
+| `400 Bad Request` | The request was missing required fields or contained invalid data. |
+| `401 Unauthorized` | You are not authenticated, or you do not have the required role. |
+| `403 Forbidden` | You are authenticated but do not have admin privileges for this route. |
+| `404 Not Found` | The requested resource does not exist. |
+| `410 Gone` | The challenge has expired and is no longer available. |
+| `500 Internal Server Error` | An unexpected error occurred on the server. |
+
+## Pagination
+
+**GET /api/problems** supports pagination and filtering through query parameters:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | integer | `1` | The page number to retrieve. |
+| `limit` | integer | `8` | The number of results per page. |
+| `category` | string | — | Filter by challenge category (e.g., `Web`, `Crypto`). Omit or pass `All` to return all categories. |
+
+Paginated responses include a `pagination` object:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 8,
+    "total": 42,
+    "totalPages": 6,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+**Example request with pagination and category filter:**
+
+```bash
+curl "https://flagforgectf.com/api/problems?page=2&limit=10&category=Web"
+```
+
+## Explore the API
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/api/authentication">
+    Sign in with Google OAuth and pass authentication in API requests.
+  </Card>
+  <Card title="Challenges" icon="flag" href="/api/challenges">
+    List, retrieve, and create CTF challenges.
+  </Card>
+  <Card title="Flag submission" icon="paper-plane" href="/api/flag-submission">
+    Submit flags and check whether a challenge has been solved.
+  </Card>
+  <Card title="Leaderboard" icon="ranking-star" href="/api/leaderboard">
+    Fetch scores and rankings for all participants.
+  </Card>
+  <Card title="User profile" icon="user" href="/api/user-profile">
+    Retrieve user information, scores, and solved challenges.
+  </Card>
+  <Card title="Badges" icon="medal" href="/api/badges">
+    List badge templates and retrieve badges awarded to users.
+  </Card>
+  <Card title="Admin" icon="shield-halved" href="/api/admin">
+    Admin-only routes for managing challenges, users, and badges.
+  </Card>
+</CardGroup>

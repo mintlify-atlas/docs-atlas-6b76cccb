@@ -1,0 +1,106 @@
+---
+title: "Browse and solve CTF challenges on FlagForge"
+description: "FlagForge challenges are grouped by category, difficulty, and points. Learn how to browse, filter, and work through challenges from beginner to advanced."
+---
+
+FlagForge organizes all CTF challenges on the **Problems** page, where you can browse, filter, and open individual challenges. Each challenge presents a self-contained puzzle — a web vulnerability to exploit, a file to analyze, a cipher to crack — and awards points when you submit the correct flag.
+
+## Challenge anatomy
+
+Every challenge is made up of a fixed set of fields. Expand each section below to learn what it means and how to use it.
+
+<AccordionGroup>
+  <Accordion title="Title">
+    A short, descriptive name for the challenge. The title appears on the **Problems** page card and at the top of the challenge detail page. Use it to quickly identify a challenge when you return to it later.
+  </Accordion>
+
+  <Accordion title="Description">
+    The challenge brief. This is where you find the scenario, instructions, and any clues embedded in the problem statement. Read carefully — the description sometimes contains hints disguised as flavor text.
+  </Accordion>
+
+  <Accordion title="Category">
+    Each challenge belongs to a category that describes the domain of knowledge required. See [Challenge categories](#challenge-categories) below for the full list.
+  </Accordion>
+
+  <Accordion title="Points">
+    The base number of points added to your score when you solve the challenge. Challenges with higher point values are generally harder. Note that hint deductions are applied immediately when you reveal a hint — they are separate transactions from the solve award.
+  </Accordion>
+
+  <Accordion title="Hints">
+    Optional hints attached to a challenge to help you when you're stuck. Each hint has a point deduction cost. Unlocking a hint immediately subtracts that cost from your total score — the deduction happens at the moment you reveal the hint, not when you submit the flag. See [Hints system](#hints-system) below.
+  </Accordion>
+
+  <Accordion title="Links and files">
+    Depending on the challenge type, you may see an external link pointing to the target service or a downloadable file to analyze locally. Some challenges include both. See [Challenge types](#challenge-types) below.
+  </Accordion>
+</AccordionGroup>
+
+## Challenge types
+
+FlagForge supports two challenge delivery types:
+
+<CardGroup cols={2}>
+  <Card title="Link-based" icon="arrow-up-right-from-square">
+    The challenge provides a URL pointing to a live web service, remote server, or external resource. You interact with the target to find the flag. Common for web exploitation, networking, and service-based challenges.
+  </Card>
+  <Card title="File-based" icon="file-arrow-down">
+    The challenge includes a downloadable file — a binary, archive, image, PDF, or text file. You download and analyze it locally to extract the flag. Common for forensics, reverse engineering, and steganography.
+  </Card>
+</CardGroup>
+
+## Challenge categories
+
+Challenges are tagged with a category so you can focus on areas that match your skills or learning goals.
+
+| Category | What you'll practice |
+|---|---|
+| **Web** | HTTP, SQL injection, XSS, authentication bypasses, API abuse |
+| **Crypto** | Classical ciphers, modern cryptography, encoding/decoding |
+| **Forensics** | File analysis, memory dumps, steganography, log review |
+| **Pwn** | Binary exploitation, buffer overflows, shellcode |
+| **Reverse** | Disassembly, decompilation, obfuscated code |
+| **OSINT** | Open-source intelligence gathering |
+| **Misc** | Challenges that span multiple disciplines |
+
+<Tip>
+  New to CTF? Start with **Web** and **Crypto** categories. They typically have beginner-friendly challenges with clear problem statements.
+</Tip>
+
+## Filtering by category
+
+On the **Problems** page, use the category filter bar at the top of the challenge list to narrow the view.
+
+1. Click a category name (for example, **Web** or **Forensics**) to show only challenges in that category.
+2. Click **All** to return to the full list.
+
+The page uses server-side filtering, so only matching challenges load for the selected category.
+
+## Time-limited challenges
+
+Some challenges are only available for a fixed window of time. These are used for live CTF events and special competitions.
+
+<Warning>
+  Once a time-limited challenge expires, you can no longer access it or submit flags for it. Keep an eye on the countdown timer on the challenge page.
+</Warning>
+
+Time-limited challenges display a countdown timer showing how long you have left. When the timer reaches zero, the challenge closes automatically. Check the challenge description for any event-specific rules about time limits.
+
+## Hints system
+
+Each challenge can include one or more hints. Hints are locked by default — you decide whether to reveal them.
+
+<Steps>
+  <Step title="View available hints">
+    On the challenge detail page, scroll to the **Hints** section. You can see how many hints exist and the point cost for each one before you reveal it.
+  </Step>
+  <Step title="Reveal a hint">
+    Click the hint to unlock it. The point deduction is applied to your score immediately. The hint text becomes visible and stays visible for the rest of your session.
+  </Step>
+  <Step title="Keep solving">
+    Use the hint content to guide your approach. You can reveal additional hints one at a time — each carries its own deduction.
+  </Step>
+</Steps>
+
+<Note>
+  Point deductions from hints apply immediately when you reveal the hint. The solve itself awards the full base point value. Only reveal hints when you genuinely need them — each one reduces your net gain for that challenge.
+</Note>

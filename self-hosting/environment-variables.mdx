@@ -1,0 +1,211 @@
+---
+title: "Environment variables for FlagForge self-hosting"
+description: "Configure your FlagForge instance using environment variables for authentication, database, integrations, and admin access. All required variables listed."
+---
+
+FlagForge reads its configuration from environment variables at startup. You define these variables in a `.env` file at the root of the project. Some variables are required for the platform to start at all; others unlock optional integrations like Discord notifications, a Notion-powered blog, or Statsig feature flags.
+
+## Create your .env file
+
+Create a `.env` file in the project root:
+
+```bash
+touch .env
+```
+
+Then copy the template below into the file and fill in your values:
+
+```env
+# Database
+MONGO_URL=
+
+# Authentication
+NEXTAUTH_URL=
+NEXTAUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Admin
+NEXT_PUBLIC_ADMIN_EMAIL=
+NEXT_PUBLIC_ADMIN_PASSWORD=
+
+# Dynamic flags
+FLAG_SALT=
+
+# Integrations (optional)
+DISCORD_WEBHOOK_URL=
+NOTION_API_KEY=
+NOTION_DATABASE_ID=
+NEXT_PUBLIC_STATSIG_CLIENT_KEY=
+```
+
+<Warning>
+  Never commit your `.env` file to version control. Add it to `.gitignore` before your first commit. The `NEXTAUTH_SECRET` and `FLAG_SALT` values in particular must be kept secret — leaking them allows attackers to forge session tokens and predict dynamic flags.
+</Warning>
+
+---
+
+## Required variables
+
+### `MONGO_URL`
+
+The MongoDB connection string used by Mongoose to connect to your database.
+
+```env
+MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/flagforge
+```
+
+FlagForge will throw an error at startup if this variable is missing. See the [database setup guide](/self-hosting/database) for instructions on getting a connection string from MongoDB Atlas.
+
+---
+
+### `NEXTAUTH_URL`
+
+The full canonical URL of your FlagForge deployment, including the scheme. NextAuth uses this to construct OAuth callback URLs.
+
+```env
+# Local development
+NEXTAUTH_URL=http://localhost:3000
+
+# Production
+NEXTAUTH_URL=https://ctf.yourdomain.com
+```
+
+This value must exactly match the **Authorized redirect URI** you configure in the Google Cloud Console. The expected callback path is `/api/auth/callback/google`.
+
+---
+
+### `NEXTAUTH_SECRET`
+
+A random secret string used by NextAuth to sign and verify JWT session tokens. Generate one with:
+
+```bash
+openssl rand -base64 32
+```
+
+```env
+NEXTAUTH_SECRET=Ke9f2mXqP1rLsYtNvUoWcBdAhGjIzQ3R
+```
+
+Use a different value for each deployment environment (development, staging, production).
+
+---
+
+### `GOOGLE_CLIENT_ID`
+
+The OAuth 2.0 client ID from your Google Cloud Console project. FlagForge uses Google as its sole authentication provider.
+
+```env
+GOOGLE_CLIENT_ID=123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+```
+
+To get this value:
+1. Go to **APIs & Services → Credentials** in the [Google Cloud Console](https://console.cloud.google.com).
+2. Create an **OAuth 2.0 Client ID** for a web application.
+3. Add `{NEXTAUTH_URL}/api/auth/callback/google` as an authorized redirect URI.
+
+---
+
+### `GOOGLE_CLIENT_SECRET`
+
+The OAuth 2.0 client secret paired with `GOOGLE_CLIENT_ID`.
+
+```env
+GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwx
+```
+
+You find this value on the same credentials page as `GOOGLE_CLIENT_ID` in the Google Cloud Console.
+
+---
+
+### `NEXT_PUBLIC_ADMIN_EMAIL`
+
+The email address of the initial admin user. When a user signs in with Google for the first time and their email matches this value, FlagForge assigns them the `Admin` role in the database.
+
+```env
+NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
+```
+
+<Note>
+  Because this variable is prefixed with `NEXT_PUBLIC_`, it is embedded in the client-side bundle at build time. Set it to a real admin email before building for production. After the admin account is created in the database, you can manage admin roles directly from the admin dashboard.
+</Note>
+
+---
+
+## Optional variables
+
+### `NEXT_PUBLIC_ADMIN_PASSWORD`
+
+An optional admin password field. This is read at the application level and may be used for additional admin verification flows in certain configurations.
+
+```env
+NEXT_PUBLIC_ADMIN_PASSWORD=your-admin-password
+```
+
+---
+
+### `FLAG_SALT`
+
+A secret salt string used when generating `TEAM_HASH` dynamic flags. FlagForge computes per-user flags as `SHA256(FLAG_SALT + userId + questionId)`, so this value must be kept secret to prevent players from predicting other users' flags.
+
+```env
+FLAG_SALT=randomly-generated-secret-string
+```
+
+Generate a strong value with:
+
+```bash
+openssl rand -hex 32
+```
+
+This variable is required if you use dynamic flags of type `TEAM_HASH`. It has no effect on `GUID`, `LEET`, or `CLEET` flag types or on static flags.
+
+---
+
+### `DISCORD_WEBHOOK_URL`
+
+A Discord incoming webhook URL. When set, FlagForge posts a notification to the specified channel when new challenges are published.
+
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/123456789/abcdefghijklmnopqrstuvwxyz
+```
+
+Create a webhook in your Discord server under **Channel Settings → Integrations → Webhooks**.
+
+---
+
+### `NOTION_API_KEY`
+
+A Notion integration API key, used to pull blog posts or resources content from a Notion database into FlagForge.
+
+```env
+NOTION_API_KEY=secret_abcdefghijklmnopqrstuvwxyz1234567890
+```
+
+Create an integration at [notion.so/my-integrations](https://www.notion.so/my-integrations) and share the relevant database with it.
+
+---
+
+### `NOTION_DATABASE_ID`
+
+The ID of the Notion database that contains your blog or resources content. You can find the database ID in the URL when you open the database in Notion:
+
+```
+https://www.notion.so/{workspace}/{DATABASE_ID}?v=...
+```
+
+```env
+NOTION_DATABASE_ID=abcdef1234567890abcdef1234567890
+```
+
+Both `NOTION_API_KEY` and `NOTION_DATABASE_ID` must be set for Notion integration to work.
+
+---
+
+### `NEXT_PUBLIC_STATSIG_CLIENT_KEY`
+
+A client-side SDK key from [Statsig](https://statsig.com) for feature flag and A/B testing support. If omitted, Statsig is disabled and all features default to their baseline behavior.
+
+```env
+NEXT_PUBLIC_STATSIG_CLIENT_KEY=client-abcdefghijklmnopqrstuvwxyz
+```

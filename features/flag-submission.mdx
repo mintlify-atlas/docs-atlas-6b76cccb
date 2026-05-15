@@ -1,0 +1,116 @@
+---
+title: "Submit flags and earn points in FlagForge"
+description: "Learn how flag submission works in FlagForge, including the flag format, practice mode, point calculation, and what happens after a correct submission."
+---
+
+When you find the answer to a FlagForge challenge, you submit it as a flag — a specially formatted string that the platform validates against the correct answer. A correct submission records your score, while an incorrect one lets you keep trying without penalty.
+
+## Flag format
+
+All flags in FlagForge follow a consistent format:
+
+```text
+flag{...}
+```
+
+The content inside the curly braces varies by challenge. It could be a word, a hash, a sentence, or a UUID — the challenge description and any files you analyze will lead you to the right value.
+
+**Examples:**
+
+```text
+flag{hello_world}
+flag{1bab71b8-117f-4dea-a047-340b72101d7b}
+flag{H3ll0_W0r1d}
+```
+
+<Note>
+  Flags are case-sensitive. Submit the flag exactly as you find it, including capitalization.
+</Note>
+
+## How to submit a flag
+
+<Steps>
+  <Step title="Open the challenge">
+    Go to the **Problems** page and click the challenge you want to submit. This opens the challenge detail page with the description, any attached files or links, and the submission form.
+  </Step>
+  <Step title="Find the flag">
+    Work through the challenge. Exploit the vulnerability, analyze the file, or decode the cipher until you find a string that matches the `flag{...}` format.
+  </Step>
+  <Step title="Enter the flag">
+    Scroll to the submission box at the bottom of the challenge page. Type or paste your flag into the input field.
+  </Step>
+  <Step title="Click Submit">
+    Click the **Submit** button. FlagForge validates your flag and immediately returns a result.
+  </Step>
+</Steps>
+
+## What happens on correct submission
+
+When you submit the correct flag, FlagForge:
+
+1. Records a solved entry linking your account to the challenge.
+2. Awards the challenge's full base point value to your total score.
+3. Updates your position on the leaderboard.
+
+You receive a success response with the points you earned:
+
+```json
+{
+  "message": "Right! Congratulations on solving the challenge!",
+  "points": 250,
+  "success": true,
+  "correct": true
+}
+```
+
+The `points` value is the challenge's full base point value.
+
+## What happens on incorrect submission
+
+If your flag is wrong, FlagForge returns an error response and you can try again:
+
+```json
+{
+  "message": "Incorrect flag. Try again!",
+  "success": false,
+  "correct": false
+}
+```
+
+There is no limit on the number of attempts and no score penalty for incorrect submissions — only hint reveals deduct points. Keep refining your approach until you find the right flag.
+
+## Point calculation
+
+Scoring in FlagForge works in two separate steps:
+
+1. **Hint unlocks deduct points immediately.** Each time you reveal a hint, its `pointsDeduction` value is subtracted from your total score right away.
+
+2. **Solving a challenge adds the full base point value.** When you submit the correct flag, you earn the challenge's full base points regardless of how many hints you revealed.
+
+For example, if a challenge is worth **300 points** and you revealed two hints costing **25** and **50 points**:
+
+- Revealing hint 1: −25 points from your total
+- Revealing hint 2: −50 points from your total
+- Solving the challenge: +300 points to your total
+
+Net change: **+225 points**
+
+<Note>
+  Hint deductions are applied immediately when you reveal a hint. The submission itself awards the challenge's full base value.
+</Note>
+
+## Practice mode
+
+If you have already solved a challenge and want to try it again — for example, to test a different approach or verify your methodology — you can submit in practice mode.
+
+Practice mode submissions are not scored and do not affect your total score or leaderboard position. The response indicates whether your flag is correct without recording a new solution:
+
+```json
+{
+  "message": "Practice mode: Correct flag.",
+  "correct": true,
+  "practice": true
+}
+```
+
+To use practice mode, append `?practice=true` to the challenge submission URL. On the challenge page, this is handled automatically once a challenge is marked as solved for your account.

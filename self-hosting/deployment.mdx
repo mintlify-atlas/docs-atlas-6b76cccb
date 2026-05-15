@@ -1,0 +1,115 @@
+---
+title: "Deploy FlagForge on your own server"
+description: "Host your own FlagForge CTF instance for private events or organizations. This guide covers cloning, installing, configuring, and running the platform."
+---
+
+Self-hosting FlagForge lets you run a fully private CTF platform for your organization, university club, classroom, or invite-only competition. Because FlagForge is open-source under the GPL-3.0 license, you can customize the codebase, control your own data, and deploy it anywhere that runs Node.js.
+
+## Prerequisites
+
+Before you begin, make sure you have the following ready:
+
+<CardGroup cols={2}>
+  <Card title="Node.js 20+" icon="node-js">
+    FlagForge requires Node.js 20 or later. Download it from [nodejs.org](https://nodejs.org).
+  </Card>
+  <Card title="npm" icon="box">
+    npm is bundled with Node.js. Run `npm --version` to confirm it's available.
+  </Card>
+  <Card title="MongoDB instance" icon="database">
+    You need a MongoDB connection string — either from [MongoDB Atlas](https://www.mongodb.com/atlas) or a self-hosted cluster.
+  </Card>
+  <Card title="Google OAuth app" icon="google">
+    FlagForge uses Google OAuth for sign-in. Create OAuth credentials in the [Google Cloud Console](https://console.cloud.google.com).
+  </Card>
+</CardGroup>
+
+<Note>
+  You need a MongoDB connection string before you can start the server. If you don't have a MongoDB instance yet, see the [database setup guide](/self-hosting/database) for step-by-step instructions.
+</Note>
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the FlagForge repository from GitHub:
+
+    ```bash
+    git clone https://github.com/FlagForgeCTF/flagForge
+    ```
+
+    Then change into the project directory:
+
+    ```bash
+    cd flagForge
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required Node.js packages:
+
+    ```bash
+    npm install
+    ```
+
+    This installs Next.js, Mongoose, NextAuth, and all other dependencies listed in `package.json`.
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file in the project root and populate it with your configuration values:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    If no `.env.example` exists, create a `.env` file manually. See the [environment variables reference](/self-hosting/environment-variables) for the full list of required and optional variables.
+
+    At minimum, you must set:
+
+    ```env
+    MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/flagforge
+    NEXTAUTH_URL=http://localhost:3000
+    NEXTAUTH_SECRET=your-random-secret
+    GOOGLE_CLIENT_ID=your-google-client-id
+    GOOGLE_CLIENT_SECRET=your-google-client-secret
+    NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
+    ```
+  </Step>
+
+  <Step title="Run in development mode">
+    Start the development server with hot reloading:
+
+    ```bash
+    npm run dev
+    ```
+
+    The platform will be available at `http://localhost:3000`. The first user to sign in with the email matching `NEXT_PUBLIC_ADMIN_EMAIL` will receive admin privileges.
+  </Step>
+
+  <Step title="Build and run for production">
+    When you're ready to deploy to a production server, build the optimized Next.js output and start the production server:
+
+    ```bash
+    npm run build && npm start
+    ```
+
+    The build step compiles your application and generates a sitemap. The `npm start` command runs the production server on port 3000 by default.
+  </Step>
+</Steps>
+
+## Production deployment
+
+For production use, Vercel is the recommended platform because FlagForge is a Next.js application and Vercel provides zero-configuration deployments, automatic SSL, and edge caching.
+
+To deploy to Vercel:
+
+1. Push your repository to GitHub.
+2. Import the repository in your [Vercel dashboard](https://vercel.com/new).
+3. Add your environment variables in the **Environment Variables** section of the project settings.
+4. Click **Deploy**.
+
+<Note>
+  When deploying to Vercel, set `NEXTAUTH_URL` to your production domain (for example, `https://ctf.yourdomain.com`). Omitting or misconfiguring this variable will break Google OAuth callbacks.
+</Note>
+
+You can also deploy FlagForge to any platform that supports Node.js, including Railway, Render, Fly.io, or a VPS running a reverse proxy such as Nginx or Caddy in front of `npm start`.

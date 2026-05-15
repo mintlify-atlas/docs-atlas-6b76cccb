@@ -1,0 +1,170 @@
+---
+title: "Authenticate with the FlagForge API"
+description: "FlagForge uses session-based authentication via NextAuth. Learn how to sign in with Google OAuth and pass authentication in API requests."
+---
+
+FlagForge authenticates API requests using NextAuth session cookies. When you sign in through a browser, NextAuth sets a `next-auth.session-token` cookie that is sent automatically with every subsequent request. There are no API keys or tokens to manage — authentication is tied to your browser session.
+
+<Note>
+  FlagForge does not support API key authentication. All authenticated API calls require an active browser session established through Google OAuth. Requests from non-browser environments (such as server-to-server scripts) cannot authenticate with the current API.
+</Note>
+
+## How authentication works
+
+When you sign in, NextAuth issues a signed JWT stored in an HTTP-only session cookie. The API reads this cookie on every request to determine who you are and what role you have. Sessions expire after **1 hour** and are refreshed automatically every 15 minutes while you are active.
+
+The API recognizes two roles:
+
+| Role | Description |
+|------|-------------|
+| `User` | Standard account. Can browse challenges, submit flags, and view the leaderboard. |
+| `Admin` | Elevated account. Can create and manage challenges, users, and badges in addition to all `User` actions. |
+
+New accounts are assigned the `User` role by default when they first sign in with Google.
+
+## Signing in
+
+FlagForge supports **Google OAuth** as the only sign-in method.
+
+<Steps>
+  <Step title="Redirect to the sign-in page">
+    Send your user to the NextAuth sign-in endpoint. This initiates the Google OAuth flow:
+
+    ```
+    GET /api/auth/signin
+    ```
+
+    You can also redirect users directly to `/authentication`, which is the FlagForge sign-in page.
+  </Step>
+  <Step title="Complete the Google OAuth flow">
+    The user is redirected to Google to authorize the application. After authorizing, Google redirects back to FlagForge, where NextAuth creates or retrieves the user account and sets the session cookie.
+  </Step>
+  <Step title="Make authenticated requests">
+    Once the session cookie is set, all requests from the same browser session are authenticated automatically. You do not need to attach any authorization header.
+  </Step>
+</Steps>
+
+## Passing authentication in requests
+
+In a browser context, the `next-auth.session-token` cookie is included automatically by the browser. If you are making requests from JavaScript (for example, using `fetch`), ensure you include credentials:
+
+```javascript
+const response = await fetch("https://flagforgectf.com/api/problems", {
+  method: "GET",
+  credentials: "include",
+});
+```
+
+For `curl` with a captured cookie file:
+
+```bash
+curl -b cookies.txt "https://flagforgectf.com/api/problems"
+```
+
+## Admin authentication
+
+Routes under `/api/admin`, `/api/badges`, `/api/badge-templates`, and `/resources/upload` require the `Admin` role in addition to an active session. If you send a request to an admin route while signed in as a regular user, the API returns a `403 Forbidden` response:
+
+```json
+{
+  "error": "Forbidden",
+  "message": "Admin privileges required",
+  "isAdmin": false
+}
+```
+
+## Error responses
+
+If a request requires authentication and no valid session is found, the API returns:
+
+```json
+{
+  "message": "You are not authorized"
+}
+```
+
+**HTTP status:** `401 Unauthorized`
+
+If you are signed in but your account does not have permission to perform the action (for example, creating a challenge without the `Admin` role):
+
+```json
+{
+  "message": "You are not authorized to add a question"
+}
+```
+
+**HTTP status:** `401 Unauthorized`
+
+## Signing out
+
+To end a session and invalidate the current token, use one of the following endpoints.
+
+### POST /api/auth/logout
+
+Signs out the current user, blacklists the session token, and clears all authentication cookies.
+
+```bash
+curl -X POST "https://flagforgectf.com/api/auth/logout" \
+  -b cookies.txt
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Logged out successfully",
+  "tokenBlacklisted": true
+}
+```
+
+### POST /api/auth/manual-signout
+
+An alternative sign-out endpoint that also blacklists the current token and clears authentication cookies.
+
+```bash
+curl -X POST "https://flagforgectf.com/api/auth/manual-signout" \
+  -b cookies.txt
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Signed out successfully"
+}
+```
+
+## Revoking a token
+
+If you need to explicitly revoke a specific session token (for example, after detecting suspicious activity), use the revoke endpoint. You must be signed in to call this endpoint.
+
+### POST /api/auth/revoke-token
+
+**Request body:**
+
+```json
+{
+  "token": "<session-token-value>",
+  "expiresAt": "2026-05-16T10:00:00.000Z"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token` | string | Yes | The raw session token value to revoke. |
+| `expiresAt` | ISO 8601 string | No | When the token expires. Defaults to 1 hour from now if omitted. |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Token revoked successfully"
+}
+```
+
+<Warning>
+  Once a token is revoked, the associated session is immediately invalidated. Any browser using that token will be redirected to the sign-in page on the next request.
+</Warning>

@@ -1,0 +1,88 @@
+---
+title: "Per-user dynamic flags prevent flag sharing"
+description: "FlagForge generates unique flags per user for supported challenges. Understand the four flag types, how they work, and how to use them as a player."
+---
+
+FlagForge supports dynamic flags — flags that are unique to each player for a given challenge. Instead of every participant solving the same challenge and getting the same flag, you receive a flag that only works for your account. This prevents players from sharing answers and ensures that every score on the leaderboard reflects genuine effort.
+
+## What dynamic flags are
+
+A dynamic flag is generated specifically for you when you start a supported challenge. Two players working on the same challenge see different flags, and submitting another player's flag will not be accepted by the platform.
+
+<Info>
+  Not all challenges use dynamic flags. Challenges that do will show a **Start Challenge** button. Challenges without dynamic flags use a static flag shared by all players.
+</Info>
+
+## The four flag types
+
+FlagForge generates dynamic flags in four formats depending on how the challenge is configured.
+
+<AccordionGroup>
+  <Accordion title="GUID — random UUID">
+    A randomly generated UUID wrapped in the flag format. This flag is completely unique and cannot be predicted or derived from any user-specific information.
+
+    ```text
+    flag{1bab71b8-117f-4dea-a047-340b72101d7b}
+    ```
+  </Accordion>
+
+  <Accordion title="TEAM_HASH — user and challenge specific hash">
+    A hash derived from your user ID and the challenge ID, combined with a secret salt. This flag is deterministic for your account and the specific challenge, but different from every other player's flag.
+
+    ```text
+    flag{hello_world_5418ce4d815c}
+    ```
+  </Accordion>
+
+  <Accordion title="LEET — leet-speak transformation">
+    The challenge's base text transformed using leet speak, replacing standard characters with visually similar numbers and symbols.
+
+    ```text
+    flag{H3ll0_W0r1d}
+    ```
+  </Accordion>
+
+  <Accordion title="CLEET — complex leet speak">
+    A more aggressive leet-speak transformation that substitutes characters with special symbols in addition to numbers, increasing the variation from the original text.
+
+    ```text
+    flag{H3!!0_W0r!d}
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## How dynamic flags work in practice
+
+When a challenge uses a dynamic flag, the flag displayed to you is generated specifically for your account using the challenge's flag template. You can see your unique flag on the challenge detail page after opening the challenge.
+
+<Steps>
+  <Step title="Open the challenge">
+    Navigate to the **Problems** page and click the challenge you want to work on.
+  </Step>
+  <Step title="View your unique flag">
+    On the challenge detail page, your personal flag is shown. Every player sees a different value for the same challenge.
+  </Step>
+  <Step title="Solve and submit">
+    Work through the challenge. When you are ready, submit your flag using the submission form. See [Flag submission](/features/flag-submission) for details.
+  </Step>
+</Steps>
+
+<Info>
+  Dynamic flags are generated from the challenge's flag template using markers such as `[GUID]`, `[TEAM_HASH]`, `[LEET]`, or `[CLEET]`. The template is set by the admin when creating the challenge.
+</Info>
+
+## Flag expiration
+
+Dynamic flags expire **24 hours** after they are generated. If your flag expires before you solve the challenge, reload the challenge page to receive a new one.
+
+<Warning>
+  Your old flag stops working when it expires. If you stored the flag somewhere and come back the next day, you need to refresh it before submitting.
+</Warning>
+
+## One-time use
+
+Each dynamic flag is valid for exactly one successful submission. Once you submit the correct flag and your score is recorded, that flag is deleted. If you try the challenge again in practice mode, you are working against the static fallback — dynamic flags are not re-issued for already-solved challenges.
+
+<Tip>
+  Solve the challenge in the same session when possible to avoid expiration.
+</Tip>

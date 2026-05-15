@@ -1,0 +1,62 @@
+---
+title: "Admin dashboard overview for FlagForge"
+description: "The FlagForge admin dashboard gives you full control over challenges, users, and badges. Learn what admin access enables and how to get started."
+icon: "shield"
+---
+
+The FlagForge admin dashboard is your central control panel for running a CTF event. From here you can create and manage challenges, review player accounts, assign badges, and monitor platform activity — all without touching the database directly.
+
+## Becoming an admin
+
+FlagForge uses a role-based access system. Every user account has a `role` field that is either `"User"` (the default) or `"Admin"`. Only accounts with the `Admin` role can access admin-only routes and the dashboard.
+
+There are two ways to grant admin access:
+
+**Via environment variable** — Set the `NEXT_PUBLIC_ADMIN_EMAIL` environment variable to the email address of the account you want to promote. The platform checks this value during authentication and assigns the `Admin` role automatically.
+
+**Via the database** — Connect directly to your MongoDB instance and update the `role` field on the target user document to `"Admin"`.
+
+<Warning>
+  Admin accounts have full write access to challenges, users, and badges. Only grant the `Admin` role to trusted team members.
+</Warning>
+
+## What admins can do
+
+Once your account has the `Admin` role, you gain access to the following capabilities:
+
+- **Create and manage challenges** — Add new CTF problems, set point values, upload challenge files, configure hints, and apply time limits.
+- **Manage users** — View all registered players, inspect their scores and solved challenges, and update account roles.
+- **Assign badges** — Create badge templates, upload custom badge images, and award badges to individual players.
+- **View dashboard statistics** — Monitor total challenges, active challenges, total users, new registrations, badge counts, and recent solve activity.
+
+## Admin-only routes
+
+Admin access is enforced at the API layer by middleware that checks the `role` value on the authenticated session token. Any request to an admin route from a non-admin account receives a `403 Forbidden` response. Unauthenticated requests are redirected to the sign-in page.
+
+The following route prefixes are protected:
+
+| Route prefix | Purpose |
+|---|---|
+| `/api/admin` | All admin API endpoints |
+| `/api/badges` | Badge management endpoints |
+| `/api/badge-templates` | Badge template endpoints |
+| `/resources/upload` | File upload for challenge resources |
+| `/roles/developers/admins` | Admin panel UI |
+
+<Info>
+  If you visit an admin route without the `Admin` role, you are redirected to `/unauthorized`. API calls return `{ "error": "Forbidden", "message": "Admin privileges required" }`.
+</Info>
+
+## Explore the admin guide
+
+<CardGroup cols={3}>
+  <Card title="Managing challenges" icon="flag" href="/admin/managing-challenges">
+    Create, edit, and delete CTF challenges. Set point values, upload files, configure hints, and apply time limits.
+  </Card>
+  <Card title="Managing users" icon="users" href="/admin/managing-users">
+    View all registered players, inspect their scores, and update user roles.
+  </Card>
+  <Card title="Badge management" icon="award" href="/admin/badge-management">
+    Create badge templates, upload badge images, and assign badges to recognize player achievements.
+  </Card>
+</CardGroup>

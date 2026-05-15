@@ -1,0 +1,280 @@
+---
+title: "Flag submission API — validate answers to challenges"
+description: "POST /api/problems/[id] submits a flag for validation. Supports practice mode for re-attempting solved challenges. Returns points earned on success."
+---
+
+The flag submission API lets authenticated participants submit answers to challenges and receive immediate feedback. A correct submission records the solve, awards points to the user's total score, and applies any hint penalties accrued during the attempt. Practice mode lets you re-attempt challenges you have already solved without affecting your score.
+
+## POST /api/problems/[id]
+
+Submit a flag for a challenge. Requires an active session.
+
+<Warning>
+You must be signed in to submit flags. Unauthenticated requests return `401 Unauthorized`.
+</Warning>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The MongoDB `_id` of the challenge you are submitting a flag for.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="practice" type="boolean">
+  Set to `true` to submit in practice mode. Practice mode is only active if you have already solved the challenge. Your score is not affected — practice submissions never create a new `UserQuestion` record.
+</ParamField>
+
+### Request body
+
+<ParamField body="flag" type="string" required>
+  The flag string to validate. Leading and trailing whitespace is trimmed before comparison.
+</ParamField>
+
+### Response fields
+
+The response shape varies depending on the outcome.
+
+**Correct flag (first solve):**
+
+<ResponseField name="message" type="string">
+  `"Right! Congratulations on solving the challenge!"`
+</ResponseField>
+
+<ResponseField name="points" type="number">
+  Points awarded for this solve, after any hint penalties have been deducted.
+</ResponseField>
+
+<ResponseField name="success" type="boolean">
+  `true`
+</ResponseField>
+
+<ResponseField name="correct" type="boolean">
+  `true`
+</ResponseField>
+
+**Incorrect flag:**
+
+<ResponseField name="message" type="string">
+  `"Incorrect flag. Try again!"`
+</ResponseField>
+
+<ResponseField name="success" type="boolean">
+  `false`
+</ResponseField>
+
+<ResponseField name="correct" type="boolean">
+  `false`
+</ResponseField>
+
+**Already solved (no practice param):**
+
+<ResponseField name="message" type="string">
+  `"You have already solved this challenge!"`
+</ResponseField>
+
+**Practice mode — correct:**
+
+<ResponseField name="message" type="string">
+  `"Practice mode: Correct flag."`
+</ResponseField>
+
+<ResponseField name="correct" type="boolean">
+  `true`
+</ResponseField>
+
+<ResponseField name="practice" type="boolean">
+  `true`
+</ResponseField>
+
+**Practice mode — incorrect:**
+
+<ResponseField name="message" type="string">
+  `"Practice mode: Incorrect flag. Try again!"`
+</ResponseField>
+
+<ResponseField name="correct" type="boolean">
+  `false`
+</ResponseField>
+
+<ResponseField name="practice" type="boolean">
+  `true`
+</ResponseField>
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `401 Unauthorized` | You are not signed in. |
+| `404 Not Found` | No challenge exists with the given `id`. |
+| `410 Gone` | The challenge has expired and no longer accepts submissions. |
+
+### How points and hints interact
+
+Hint deductions are applied immediately when a hint is unlocked via `POST /api/problems/[id]/hints` — they are not re-applied at submission time. The `points` field in the success response is the challenge's full base point value. The net effect on a player's score is the sum of hint deductions (already applied) plus the base points added on solve.
+
+### Examples
+
+**Submit a flag:**
+
+```bash
+curl -X POST "https://flagforgectf.com/api/problems/665a1f2e3c4b5d6e7f8a9b0c" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=<session-token>" \
+  -d '{"flag": "FF{xss_c00ki3_theft}"}'
+```
+
+```json
+{
+  "message": "Right! Congratulations on solving the challenge!",
+  "points": 150,
+  "success": true,
+  "correct": true
+}
+```
+
+**Submit in practice mode:**
+
+```bash
+curl -X POST "https://flagforgectf.com/api/problems/665a1f2e3c4b5d6e7f8a9b0c?practice=true" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=<session-token>" \
+  -d '{"flag": "FF{xss_c00ki3_theft}"}'
+```
+
+```json
+{
+  "message": "Practice mode: Correct flag.",
+  "correct": true,
+  "practice": true
+}
+```
+
+---
+
+## Dynamic flags and the flag generator
+
+The codebase includes a `utils/flagGenerator.ts` utility that implements per-user dynamic flag generation. This powers challenges where the flag template in the database contains a marker like `[GUID]`, `[TEAM_HASH]`, `[LEET]`, or `[CLEET]`. The generator is called internally when the admin creates a challenge with a dynamic flag template.
+
+See [Dynamic flags](/features/dynamic-flags) for a full explanation of the four flag types and how they work from the player's perspective.
+
+---
+
+## GET /api/problems/[id]/hints
+
+Retrieve hints for a challenge. Requires an active session. Accessing a hint records the usage against your account and deducts points from your score for that challenge before the flag is submitted.
+
+<Warning>
+Unlocking a hint is irreversible. The point deduction is applied to your account immediately and is factored into the points awarded when you submit the correct flag.
+</Warning>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The MongoDB `_id` of the challenge.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="hints" type="object[]">
+  Array of hint objects for this challenge. Locked hints have `text: null`; unlocked hints include the full text.
+
+  <Expandable title="Hint object fields">
+    <ResponseField name="index" type="number">
+      Zero-based index of the hint within the challenge's hint list. Use this value when calling `POST /api/problems/[id]/hints` to unlock the hint.
+    </ResponseField>
+    <ResponseField name="text" type="string | null">
+      The hint text. `null` for hints the user has not yet unlocked.
+    </ResponseField>
+    <ResponseField name="pointsDeduction" type="number">
+      Points deducted from the user's total score when this hint is unlocked.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usedHints" type="number[]">
+  Array of hint indices the authenticated user has already unlocked for this challenge.
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/problems/665a1f2e3c4b5d6e7f8a9b0c/hints" \
+  -H "Cookie: next-auth.session-token=<session-token>"
+```
+
+```json
+{
+  "hints": [
+    {
+      "index": 0,
+      "text": "Think about input sanitization",
+      "pointsDeduction": 25
+    },
+    {
+      "index": 1,
+      "text": null,
+      "pointsDeduction": 50
+    }
+  ],
+  "usedHints": [0]
+}
+```
+
+---
+
+## POST /api/problems/[id]/hints
+
+Unlock a specific hint for a challenge. Requires an active session. Deducts the hint's `pointsDeduction` from the user's total score immediately on unlock. Cannot be used if the challenge is already solved.
+
+<Warning>
+Unlocking a hint is irreversible and immediately deducts points from your total score.
+</Warning>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The MongoDB `_id` of the challenge.
+</ParamField>
+
+### Request body
+
+<ParamField body="hintIndex" type="number" required>
+  Zero-based index of the hint to unlock. Use the `index` field from `GET /api/problems/[id]/hints` to determine the correct value.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="message" type="string">
+  Confirmation message including the hint text and points deducted.
+</ResponseField>
+
+<ResponseField name="hint" type="string">
+  The revealed hint text.
+</ResponseField>
+
+<ResponseField name="pointsDeducted" type="number">
+  Points subtracted from the user's total score for this hint reveal.
+</ResponseField>
+
+<ResponseField name="success" type="boolean">
+  `true` on success.
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST "https://flagforgectf.com/api/problems/665a1f2e3c4b5d6e7f8a9b0c/hints" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=<session-token>" \
+  -d '{"hintIndex": 0}'
+```
+
+```json
+{
+  "message": "Hint revealed: Think about input sanitization. 25 points deducted from your score.",
+  "hint": "Think about input sanitization",
+  "pointsDeducted": 25,
+  "success": true
+}
+```

@@ -1,0 +1,103 @@
+---
+title: "Create and manage CTF challenges as an admin"
+description: "Admins can create, edit, and delete CTF challenges in FlagForge. This guide covers challenge fields, file uploads, hints, and time-limited challenges."
+icon: "flag"
+---
+
+As an admin, you create the challenges that players solve during your CTF event. Each challenge has a set of required fields, optional file attachments, hints with point deductions, and an optional time limit. This guide walks you through every option available when creating or editing a challenge.
+
+## Challenge fields
+
+When you create a challenge, you fill out the following fields.
+
+### Required fields
+
+| Field | Description |
+|---|---|
+| `title` | The challenge name shown to players. |
+| `description` | A full description of the problem. Supports Markdown. |
+| `category` | The challenge category (e.g., `Web`, `Crypto`, `Forensics`). Used for filtering on the challenges page. |
+| `points` | The number of points awarded for solving the challenge. |
+| `flag` | The exact flag string players must submit to solve the challenge. |
+
+<Warning>
+  Store the exact flag value players must submit — including any prefix such as `flag{...}`. FlagForge performs a direct string comparison, so a mismatch in casing or formatting will cause correct submissions to fail.
+</Warning>
+
+### Optional fields
+
+| Field | Description |
+|---|---|
+| `link` | An external URL players can visit for additional context or a hosted challenge environment. |
+| `challengeFile` | A downloadable file attached to the challenge (ZIP, PDF, TXT, PNG, or JPG). |
+| `challengeType` | Set to `"file"` when attaching a file, or `"link"` for URL-based challenges. Defaults to `"link"`. |
+| `hints` | An array of hints, each with a `text` string and a `pointsDeduction` number. Players spend points to reveal hints. |
+
+## Uploading a challenge file
+
+When you set `challengeType` to `"file"`, you can attach a downloadable file to the challenge. The file is stored on the server and a download link is shown to players on the challenge page.
+
+**Allowed file types:** ZIP, PDF, TXT, PNG, JPG
+
+**Maximum file size:** 50 MB
+
+<Note>
+  Files are saved to `public/challenges/files/` with a unique timestamped filename. The stored path is served as a public URL at `/challenges/files/<filename>`.
+</Note>
+
+## Setting a time limit
+
+You can make a challenge expire after a set duration. Once the expiry date passes, the challenge is marked as expired and players can no longer submit flags for it.
+
+To enable a time limit, toggle **Is time limited** and then set the following fields:
+
+| Field | Description |
+|---|---|
+| `timeLimit` | A positive integer representing the duration. |
+| `timeLimitUnit` | The unit for the duration: `hours`, `days`, or `weeks`. |
+| `expiryDate` | Calculated automatically from the time limit, or set directly as a date. |
+
+<Tip>
+  Use time-limited challenges to create urgency during live CTF events, or to retire older challenges after a competition ends.
+</Tip>
+
+## Discord notifications
+
+When you create a new challenge, FlagForge automatically sends a notification to your configured Discord channel. The notification includes the challenge title, description, point value, category, and a direct link to the challenge at `https://flagforgectf.com/problems/<id>`.
+
+To enable Discord notifications, set the `DISCORD_WEBHOOK_URL` environment variable in your deployment.
+
+## Creating a challenge
+
+<Steps>
+  <Step title="Navigate to the admin panel">
+    Sign in with an **Admin** account and go to `/roles/developers/admins`.
+  </Step>
+  <Step title="Open the challenge creation form">
+    Click **Create Challenge** to open the new challenge form.
+  </Step>
+  <Step title="Fill in the required fields">
+    Enter the **title**, **description**, **category**, **points**, and **flag**. The description field supports Markdown — you can use headings, code blocks, and links.
+  </Step>
+  <Step title="Choose a challenge type">
+    Select **Link** if the challenge uses an external URL, or **File** if you are attaching a downloadable file. For file-based challenges, select your file (ZIP, PDF, TXT, PNG, or JPG, up to 50 MB).
+  </Step>
+  <Step title="Add hints (optional)">
+    Click **Add hint** to attach one or more hints. For each hint, enter the hint text and the number of points deducted when a player reveals it.
+  </Step>
+  <Step title="Set a time limit (optional)">
+    Toggle **Is time limited** and enter a duration and unit (`hours`, `days`, or `weeks`). The expiry date is calculated automatically.
+  </Step>
+  <Step title="Submit the challenge">
+    Click **Create**. The challenge is saved to the database and a Discord notification is sent to your configured channel.
+  </Step>
+</Steps>
+
+## Hints
+
+Each hint has two properties:
+
+- **`text`** — The hint content shown to the player after they choose to spend points.
+- **`pointsDeduction`** — The number of points deducted from the player's total score when they reveal the hint. Must be `0` or greater.
+
+Players see a hint button on the challenge page. They are shown the point cost before confirming. You can add multiple hints per challenge with different costs.

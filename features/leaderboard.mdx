@@ -1,0 +1,65 @@
+---
+title: "Real-time leaderboard tracks your CTF ranking"
+description: "The FlagForge leaderboard updates instantly as players solve challenges. Learn how scores work, what affects your ranking, and how to climb the board."
+---
+
+The FlagForge leaderboard shows how all players stack up against each other. Every time a challenge is solved, scores update and rankings shift. You can check the leaderboard at any time to see where you stand and how close you are to the players above you.
+
+## How scoring works
+
+Your total score reflects two types of transactions:
+
+- **Hint unlocks subtract points immediately.** Each time you reveal a hint, its point cost is deducted from your total score at that moment.
+- **Solving a challenge adds the full base point value.** Submitting the correct flag awards you the challenge's full base points, regardless of how many hints you revealed.
+
+The net effect is that using hints lowers your score for the hints themselves, but the solve still awards the full base points. Challenges you solve without hints result in a pure point gain equal to the base value.
+
+<Info>
+  Your score never decreases due to incorrect flag submissions. Only hint reveals reduce your score.
+</Info>
+
+## The leaderboard page
+
+Navigate to the **Leaderboard** page to see the rankings. The leaderboard displays the top 50 players sorted by total score, from highest to lowest. Each row shows:
+
+| Column | What it shows |
+|---|---|
+| **Rank** | Your current position among all players |
+| **Name** | The player's display name |
+| **Score** | Total points accumulated across all solved challenges |
+| **Challenges solved** | Number of challenges completed |
+
+Rankings update automatically as players solve challenges, so the order you see reflects the current state of the competition.
+
+## Your profile score vs the leaderboard
+
+Your total score appears in two places: your **Profile** page and the **Leaderboard** page. Both values come from the same source and stay in sync. The leaderboard shows your rank among all registered players, while your profile gives you a personal summary of your solved challenges and badges.
+
+## What affects your rank
+
+Your rank is determined entirely by your total score. The higher your score, the higher your rank. Two things directly influence your score:
+
+- **Solving challenges** — each correct flag submission adds points to your total.
+- **Revealing hints** — each hint deducts points from your total before you solve the challenge.
+
+There are no bonuses for solving challenges quickly, and no penalties for incorrect submissions.
+
+<Tip>
+  To maximize your score, try to solve each challenge without using hints. Work through the problem as far as you can before deciding whether to reveal a hint.
+</Tip>
+
+## Climbing the leaderboard
+
+The most reliable path up the leaderboard is to solve more challenges and minimize hint usage:
+
+<Steps>
+  <Step title="Solve unsolved challenges">
+    Every challenge you haven't solved yet is an opportunity to add points. Browse the **Problems** page and pick challenges in categories where you feel confident.
+  </Step>
+  <Step title="Tackle higher-value challenges">
+    Challenges with more points move your score faster. Once you've cleared the easier challenges, focus on the ones worth more points.
+  </Step>
+  <Step title="Limit hint usage">
+    Each hint you skip preserves more points from a challenge. Use hints only when you've exhausted other approaches.
+  </Step>
+</Steps>

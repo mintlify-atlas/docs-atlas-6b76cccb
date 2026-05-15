@@ -1,0 +1,74 @@
+---
+title: "Configure your FlagForge account and preferences"
+description: "Customize your FlagForge profile and understand the role system that controls access. Learn how User and Admin roles work and how to get admin access."
+---
+
+After you create your FlagForge account, you can customize your profile and understand what access your role grants you. This page covers profile settings, the role system, and how to access admin features if you have the required role.
+
+## Profile settings
+
+Your FlagForge profile is created automatically when you first sign in with Google OAuth. The platform pulls your name, email address, and profile picture directly from your Google account.
+
+### Name and avatar
+
+Your display name and avatar are sourced from your Google account. To update them, change your name or profile photo in your [Google account settings](https://myaccount.google.com) and then sign out and back in to FlagForge. The platform fetches your latest profile information on each sign-in.
+
+### Viewing your profile
+
+Click your avatar in the navigation bar to open your profile page. Your profile shows:
+
+- Your total score
+- The list of challenges you've solved
+- The badges you've earned
+- Your current ranking
+
+## Role system
+
+FlagForge has two roles that control what you can see and do on the platform.
+
+### User
+
+The **User** role is assigned to every account by default when you sign in for the first time. As a User, you can:
+
+- Browse and solve challenges
+- Submit flags
+- View the leaderboard
+- Earn and display badges
+- Access your profile page
+
+### Admin
+
+The **Admin** role grants access to the admin dashboard and all administrative features. Admins can:
+
+- Create, edit, and delete challenges
+- Manage user accounts
+- Assign and revoke badges
+- View platform-wide statistics
+
+<Warning>
+  Admin access grants full control over challenges, users, and badges. Only assign the Admin role to trusted individuals.
+</Warning>
+
+### How roles are assigned
+
+Roles are stored in the database and managed by an existing admin. If you need Admin access, contact the administrator of your FlagForge instance.
+
+On a fresh self-hosted deployment, the admin email is set via the `NEXT_PUBLIC_ADMIN_EMAIL` environment variable. See the [environment variables reference](/self-hosting/environment-variables) for details.
+
+## Accessing admin features
+
+If your account has the **Admin** role, you'll see an **Admin** link in the navigation bar. Click it to open the admin dashboard where you can manage challenges, users, and badges.
+
+<Info>
+  If you don't see the **Admin** link after being granted the Admin role, sign out and sign back in to refresh your session token.
+</Info>
+
+Sessions in FlagForge use JWTs that expire after one hour. Your role is re-read from the database on every token refresh, so role changes take effect within 15 minutes without requiring a sign-out.
+
+## Self-hosting configuration
+
+If you're running your own FlagForge instance, additional configuration is available through environment variables — including database connection strings, OAuth credentials, and feature flags.
+
+<Card title="Environment variables" icon="gear" href="/self-hosting/environment-variables">
+  View the full list of environment variables used to configure a self-hosted FlagForge instance.
+</Card>

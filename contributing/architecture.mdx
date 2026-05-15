@@ -1,0 +1,203 @@
+---
+title: "FlagForge technical architecture and system design"
+description: "Understand how FlagForge is structured: Next.js App Router, MongoDB data models, dynamic flag generation, API routes, and middleware layers."
+icon: "sitemap"
+---
+
+FlagForge is built on **Next.js 16** with the App Router, written entirely in **TypeScript**. The platform uses **MongoDB** for persistent storage, **NextAuth v4** for Google OAuth authentication, **Tailwind CSS** with **shadcn/ui** for styling, **Upstash Redis** for token blacklisting, and the **Notion API** to serve blog and resources content. Understanding this stack helps you navigate the codebase and make contributions confidently.
+
+## Technology stack
+
+<CardGroup cols={2}>
+  <Card title="Next.js 16 (App Router)" icon="n" color="#000000">
+    All routing, server components, and API routes use the Next.js App Router with TypeScript throughout.
+  </Card>
+  <Card title="MongoDB + Mongoose" icon="database">
+    Mongoose schemas define all data models. The database connection is managed in `utils/db.ts`.
+  </Card>
+  <Card title="NextAuth v4" icon="lock">
+    Google OAuth authentication with session-based cookies. Configuration lives in `lib/authOptions.ts`.
+  </Card>
+  <Card title="Tailwind CSS + shadcn/ui" icon="palette">
+    Utility-first styling with shadcn/ui primitives. Global styles are in `app/globals.css`.
+  </Card>
+  <Card title="Upstash Redis" icon="bolt">
+    Used for token blacklisting to invalidate sessions on logout. Logic lives in `lib/tokenBlacklist.ts`.
+  </Card>
+  <Card title="Notion API" icon="book">
+    Blog posts and resources are sourced from Notion via `@notionhq/client` and `notion-to-md`.
+  </Card>
+</CardGroup>
+
+## Project structure
+
+The repository follows the Next.js App Router convention. Here is a breakdown of the key directories:
+
+```
+.
+├── app/                        # Next.js App Router routes
+│   ├── (footer)/               # Footer page routes (about, privacy, terms)
+│   ├── (main)/                 # Main application routes (home, problems, leaderboard)
+│   ├── api/                    # REST API route handlers
+│   │   ├── admin/
+│   │   ├── auth/
+│   │   ├── problems/
+│   │   ├── leaderboard/
+│   │   └── ...
+│   └── user/[username]/        # Dynamic user profile routes
+├── components/                 # React components
+│   ├── ui/                     # shadcn/ui primitives
+│   ├── Navbar.tsx
+│   ├── Footer.tsx
+│   └── ...
+├── models/                     # Mongoose schemas
+│   ├── qustionsSchema.ts       # Challenge/question model
+│   ├── userSchema.ts           # User model
+│   ├── userQuestionSchema.ts   # Solved challenge tracking
+│   └── ...
+├── interfaces/                 # TypeScript type definitions
+│   └── index.ts
+├── middleware/                 # Auth middleware
+│   ├── adminToken.ts           # Admin token verification
+│   └── tokenBlacklist.ts       # Blacklist check on requests
+├── utils/                      # Shared utilities
+│   ├── db.ts                   # MongoDB connection
+│   ├── auth.ts                 # Auth helpers
+│   └── discordNotifier.ts      # Discord webhook notifications
+├── lib/                        # Library configuration
+│   ├── authOptions.ts          # NextAuth config
+│   └── tokenBlacklist.ts       # Upstash Redis blacklist
+└── middleware.ts               # Next.js root middleware
+```
+
+<Note>
+  The `/app/api/` directory contains all REST API route handlers. Every handler validates the user session before processing a request.
+</Note>
+
+### Directory reference
+
+| Directory | Purpose |
+|---|---|
+| `/app` | Next.js App Router pages and layouts |
+| `/app/api` | REST API endpoints as Next.js route handlers |
+| `/components` | Reusable React components |
+| `/models` | Mongoose schemas for MongoDB collections |
+| `/interfaces` | Shared TypeScript interfaces and types |
+| `/middleware` | Auth middleware (token blacklist, admin checks) |
+| `/utils` | Database connection, auth helpers, Discord notifier |
+
+## Dynamic flag system
+
+The dynamic flag system is FlagForge's core feature. It generates a unique, user-specific flag for each challenge so that players cannot share flags with each other.
+
+### Architecture diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        👤 USER LAYER                             │
+│                                                                   │
+│    CTF Player  →  [Start Challenge]  →  [Submit Flag]           │
+└────────────┬──────────────────┬──────────────────────────────────┘
+             │                  │
+             │ ① Request Flag   │ ⑤ Submit Flag
+             ↓                  ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                       🔌 API LAYER                               │
+│                                                                   │
+│  POST /api/problems/dynamic-flag  │  POST /api/problems/[id]    │
+│  (Generate Flag)                   │  (Validate Flag)            │
+└────────────┬──────────────────────────────┬─────────────────────┘
+             │                               │
+             │ ② Generate                    │ ⑥ Validate
+             ↓                               ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                  ⚙️ BUSINESS LOGIC LAYER                         │
+│                                                                   │
+│  Flag Generator Utility:          Flag Types:                    │
+│  • generateGUID()                 • GUID                         │
+│  • generateTeamHash()             • TEAM_HASH                    │
+│  • applyLeetSpeak()               • LEET                         │
+│  • validateFlag()                 • CLEET                        │
+│  • calculateEntropy()                                            │
+└────────────┬──────────────────────────────┬─────────────────────┘
+             │                               │
+             │ ③ Store (24h)    ⑦ Check     │ ⑧ Fallback
+             ↓                  ↓            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    💾 DATABASE LAYER (MongoDB)                   │
+│                                                                   │
+│  DynamicFlag         Question            UserQuestion            │
+│  • userId            • _id               • userId                │
+│  • questionId        • flag (template)   • questionId            │
+│  • flag              • points            • solved                │
+│  • expiresAt (24h)   • category          • pointsEarned         │
+└─────────────────────────────────────────────────────────────────┘
+             │                               │
+             │ ④ Return Flag                 │ ⑨ Save Solution
+             ↓                               ↓
+             └───────────────┬───────────────┘
+                             │
+                             │ ⑩ Success!
+                             ↓
+                        👤 USER LAYER
+```
+
+### Flag generation
+
+When a user starts a challenge, the frontend calls `POST /api/problems/dynamic-flag`. The API validates the session, checks whether a flag already exists for that user and question, and either returns the existing flag or generates a new one. Generation reads the challenge's flag template and applies one of four strategies:
+
+| Type | Description | Example |
+|---|---|---|
+| `GUID` | Random UUID | `flag{1bab71b8-117f-4dea-a047-340b72101d7b}` |
+| `TEAM_HASH` | SHA256(salt + userId + questionId) | `flag{hello_world_5418ce4d815c}` |
+| `LEET` | Leet-speak transformation | `flag{H3ll0_W0r1d}` |
+| `CLEET` | Complex leet with special characters | `flag{H3!!0_W0r!d}` |
+
+All generated flags are validated for a minimum entropy of 32 bits before storage.
+
+<Info>
+  The `FLAG_SALT` environment variable is required for `TEAM_HASH` generation. Set it to a secure random value in your `.env` file.
+</Info>
+
+### Storage and TTL
+
+Generated flags are saved to the **DynamicFlag** MongoDB collection with a `expiresAt` field set 24 hours in the future. A TTL index on `expiresAt` automatically removes expired documents. A compound index on `(userId, questionId)` ensures fast lookups during validation.
+
+### Validation flow
+
+When a user submits a flag, `POST /api/problems/[id]` runs the following checks:
+
+1. **Session check** — reject unauthenticated requests
+2. **Duplicate check** — reject if the user already solved this challenge
+3. **Dynamic flag check** — query the `DynamicFlag` collection for a matching, non-expired document
+4. **Fallback to static** — if no dynamic flag is found, compare against the challenge's static flag stored on the `Question` document
+
+If the flag is correct, the API creates a `UserQuestion` record, updates the user's total score, awards points minus any hint penalties, and deletes the used dynamic flag.
+
+<Warning>
+  Dynamic flags are one-time use. The flag is deleted from the database immediately after a successful submission.
+</Warning>
+
+## API layer
+
+All API route handlers live in `/app/api/` and follow the Next.js App Router convention (`route.ts` files). Every handler begins with a session check — unauthenticated requests receive a `401` response.
+
+Key API groups:
+
+| Route prefix | Responsibility |
+|---|---|
+| `/api/auth` | NextAuth session endpoints |
+| `/api/problems` | Challenge listing, flag generation, flag submission |
+| `/api/leaderboard` | Leaderboard data |
+| `/api/admin` | Admin-only operations |
+| `/api/profile` | User profile reads and updates |
+| `/api/blogs` | Notion-backed blog content |
+
+## Middleware
+
+FlagForge uses two middleware layers that run on every request:
+
+- **Token blacklist middleware** (`middleware/tokenBlacklist.ts`) — checks Upstash Redis for the request's session token. If the token has been blacklisted (e.g., after logout), the request is rejected.
+- **Admin token middleware** (`middleware/adminToken.ts`) — verifies a secondary admin token for privileged routes under `/api/admin/`.
+
+The root `middleware.ts` file composes these checks and applies them to the appropriate route matchers.

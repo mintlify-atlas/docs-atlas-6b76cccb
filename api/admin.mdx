@@ -1,0 +1,203 @@
+---
+title: "Admin API — dashboard stats and user management"
+description: "Admin-only API endpoints for viewing platform statistics, managing users, and accessing debug information. Requires the Admin role on your account."
+---
+
+The admin API provides endpoints for monitoring platform health, managing registered users, and performing privileged operations. Every endpoint on this page requires your account to have the `Admin` role. Non-admin requests receive a `401` or `403` response. Pass your admin session cookie with every request.
+
+<Warning>
+All endpoints on this page are restricted to Admin accounts. Do not expose admin session tokens in client-side code or public repositories.
+</Warning>
+
+## GET /api/admin/dashboard-stats
+
+Return platform-wide statistics in a single request. Useful for populating an admin dashboard.
+
+### Response fields
+
+<ResponseField name="success" type="boolean">
+  `true` on success.
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Platform statistics snapshot.
+
+  <Expandable title="stats object fields">
+    <ResponseField name="totalChallenges" type="number">
+      Total number of challenges in the database, including expired and archived ones.
+    </ResponseField>
+    <ResponseField name="activeChallenges" type="number">
+      Number of challenges that have not yet expired (no `expiryDate`, `null` expiry, or expiry in the future).
+    </ResponseField>
+    <ResponseField name="totalUsers" type="number">
+      Total number of registered user accounts.
+    </ResponseField>
+    <ResponseField name="totalBadgeTemplates" type="number">
+      Total number of badge templates in the database.
+    </ResponseField>
+    <ResponseField name="activeBadgeTemplates" type="number">
+      Number of badge templates with `isActive: true`.
+    </ResponseField>
+    <ResponseField name="recentActivity" type="number">
+      Number of challenge completions recorded in the last 24 hours.
+    </ResponseField>
+    <ResponseField name="newUsersThisWeek" type="number">
+      Number of user accounts created in the last 7 days.
+    </ResponseField>
+    <ResponseField name="topCategories" type="object[]">
+      Up to 5 most populated challenge categories, sorted by challenge count descending. Each object has `_id` (category name) and `count`.
+    </ResponseField>
+    <ResponseField name="totalArchivedChallenges" type="number">
+      Number of challenges in the archive collection.
+    </ResponseField>
+    <ResponseField name="lastUpdated" type="string">
+      ISO 8601 timestamp of when this response was generated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/admin/dashboard-stats" \
+  -H "Cookie: next-auth.session-token=<admin-session>"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "totalChallenges": 48,
+    "activeChallenges": 45,
+    "totalUsers": 312,
+    "totalBadgeTemplates": 10,
+    "activeBadgeTemplates": 8,
+    "recentActivity": 17,
+    "newUsersThisWeek": 24,
+    "topCategories": [
+      { "_id": "Web", "count": 14 },
+      { "_id": "Crypto", "count": 10 },
+      { "_id": "Forensics", "count": 8 },
+      { "_id": "Pwn", "count": 7 },
+      { "_id": "Reversing", "count": 6 }
+    ],
+    "totalArchivedChallenges": 3,
+    "lastUpdated": "2024-06-15T09:45:00.000Z"
+  }
+}
+```
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `401 Unauthorized` | No session cookie provided. |
+| `403 Forbidden` | Signed in but not an Admin. |
+
+---
+
+## GET /api/admin/users
+
+List all registered users with their scores, roles, and challenge completion counts. Results are sorted by `totalScore` descending.
+
+### Response fields
+
+<ResponseField name="success" type="boolean">
+  `true` on success.
+</ResponseField>
+
+<ResponseField name="users" type="object[]">
+  Array of user records.
+
+  <Expandable title="User object fields">
+    <ResponseField name="name" type="string">
+      The user's display name.
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      The user's email address.
+    </ResponseField>
+    <ResponseField name="image" type="string">
+      URL to the user's avatar. May be `null`.
+    </ResponseField>
+    <ResponseField name="totalScore" type="number">
+      The user's cumulative score.
+    </ResponseField>
+    <ResponseField name="customBadges" type="object[]">
+      Custom badges assigned to this user.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp when the account was created.
+    </ResponseField>
+    <ResponseField name="completedQuestions" type="number">
+      Total number of challenges this user has solved.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total number of users returned.
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/admin/users" \
+  -H "Cookie: next-auth.session-token=<admin-session>"
+```
+
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "name": "alice",
+      "email": "alice@example.com",
+      "image": "https://lh3.googleusercontent.com/a/example",
+      "totalScore": 3750,
+      "customBadges": [],
+      "createdAt": "2024-01-15T08:30:00.000Z",
+      "completedQuestions": 28
+    },
+    {
+      "name": "bob smith",
+      "email": "bob@example.com",
+      "image": null,
+      "totalScore": 2100,
+      "customBadges": [
+        {
+          "name": "CTF Champion",
+          "description": "Winner of Spring 2024",
+          "icon": "trophy",
+          "color": "#EAB308",
+          "assignedAt": "2024-05-01T12:00:00.000Z",
+          "assignedBy": "admin@example.com"
+        }
+      ],
+      "createdAt": "2024-02-20T14:00:00.000Z",
+      "completedQuestions": 15
+    }
+  ],
+  "total": 2
+}
+```
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `401 Unauthorized` | No session cookie provided. |
+| `403 Forbidden` | Signed in but not an Admin. |
+
+---
+
+## Admin badge management
+
+See the [Badges API](/api/badges) page for the following admin-only badge endpoints:
+
+- **`POST /api/admin/assign-badge`** — Assign a badge to a user.
+- **`GET /api/admin/assign-badge`** — List all active badge assignments.
+- **`DELETE /api/admin/assign-badge`** — Remove a badge assignment.
+
+<Tip>
+All admin API calls must include the admin session cookie. In production, session cookies are `HttpOnly` and `Secure`, so they are sent automatically by the browser. When using `curl` or other HTTP clients in a script, copy the `next-auth.session-token` value from your browser's cookie storage and pass it with `-H "Cookie: next-auth.session-token=<token>"`.
+</Tip>

@@ -1,0 +1,201 @@
+---
+title: "User profile API — retrieve account and score data"
+description: "GET /api/profile returns the authenticated user's profile, score, and solved challenges. GET /api/user/[username] returns any player's public profile."
+---
+
+The user profile API exposes two endpoints: one for the authenticated user's own profile and one for any player's public profile. The authenticated endpoint returns richer data such as email and a computed rank. The public endpoint returns data that is safe to display to other participants.
+
+## GET /api/profile
+
+Retrieve the profile of the currently signed-in user. Requires an active session.
+
+<Info>
+This endpoint returns data specific to your account, including your email address. Do not expose the raw response publicly.
+</Info>
+
+### Response fields
+
+<ResponseField name="name" type="string">
+  Your display name.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Your email address.
+</ResponseField>
+
+<ResponseField name="image" type="string">
+  URL to your avatar image. Falls back to the session image if the database value is absent or invalid. May be `null`.
+</ResponseField>
+
+<ResponseField name="totalScore" type="number">
+  Your cumulative score across all solved challenges.
+</ResponseField>
+
+<ResponseField name="rank" type="number">
+  Your current rank on the platform, calculated by sorting all users by `totalScore` descending.
+</ResponseField>
+
+<ResponseField name="level" type="string">
+  Your computed level label based on `totalScore`. See the level thresholds below.
+</ResponseField>
+
+<ResponseField name="completedQuestions" type="number">
+  Total number of challenges you have solved.
+</ResponseField>
+
+<ResponseField name="roomsCompleted" type="number">
+  Alias for `completedQuestions`.
+</ResponseField>
+
+<ResponseField name="badges" type="number">
+  Count of system achievement badges you have earned, based on milestone thresholds (1, 5, 10, 25, 50, and 100 solved challenges).
+</ResponseField>
+
+<ResponseField name="streak" type="number">
+  Simplified activity streak, capped at 30.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp when your account was created.
+</ResponseField>
+
+<ResponseField name="customBadges" type="object[]">
+  Array of custom badges assigned to you by an admin. Each badge object includes `name`, `description`, `icon`, `color`, `assignedAt`, and `assignedBy`.
+</ResponseField>
+
+### Level thresholds
+
+| Score range | Level |
+|-------------|-------|
+| 0 – 199 | `[0x1][Newbie]` |
+| 200 – 499 | `[0x2][Scout]` |
+| 500 – 999 | `[0x3][Codebreaker]` |
+| 1000 – 1499 | `[0x4][Hacker]` |
+| 1500 – 1999 | `[0x5][Cipher Hunter]` |
+| 2000 – 2999 | `[0x6][Forger]` |
+| 3000+ | `[0x7][Flag Conqueror]` |
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/profile" \
+  -H "Cookie: next-auth.session-token=<session-token>"
+```
+
+```json
+{
+  "name": "alice",
+  "email": "alice@example.com",
+  "image": "https://lh3.googleusercontent.com/a/example",
+  "totalScore": 3750,
+  "rank": 1,
+  "level": "[0x7][Flag Conqueror]",
+  "completedQuestions": 28,
+  "roomsCompleted": 28,
+  "badges": 5,
+  "streak": 28,
+  "createdAt": "2024-01-15T08:30:00.000Z",
+  "customBadges": [
+    {
+      "name": "CTF Champion",
+      "description": "Winner of the Spring 2024 event",
+      "icon": "trophy",
+      "color": "#EAB308",
+      "assignedAt": "2024-05-01T12:00:00.000Z",
+      "assignedBy": "admin@example.com"
+    }
+  ]
+}
+```
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `401 Unauthorized` | You are not signed in. |
+| `404 Not Found` | The signed-in user's account was not found in the database. |
+
+---
+
+## GET /api/user/[username]
+
+Retrieve a player's public profile by their display name. No authentication is required. The username in the URL can use either spaces or hyphens — both forms are matched case-insensitively.
+
+### Path parameters
+
+<ParamField path="username" type="string" required>
+  The player's display name. Spaces may be replaced with hyphens (e.g. `bob-smith` matches the user `bob smith`).
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">
+  `true` on a successful lookup.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  The player's public profile.
+
+  <Expandable title="User object fields">
+    <ResponseField name="name" type="string">
+      The player's display name.
+    </ResponseField>
+    <ResponseField name="image" type="string">
+      URL to the player's avatar. May be `null`.
+    </ResponseField>
+    <ResponseField name="totalScore" type="number">
+      The player's cumulative score.
+    </ResponseField>
+    <ResponseField name="rank" type="number">
+      The player's current global rank.
+    </ResponseField>
+    <ResponseField name="level" type="string">
+      The player's level label (see level thresholds above).
+    </ResponseField>
+    <ResponseField name="completedQuestions" type="number">
+      Number of challenges the player has solved.
+    </ResponseField>
+    <ResponseField name="badges" type="number">
+      Count of system achievement badges earned.
+    </ResponseField>
+    <ResponseField name="customBadges" type="object[]">
+      Array of custom badges assigned by an admin.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp when the account was created.
+    </ResponseField>
+    <ResponseField name="memberSince" type="number">
+      The year the player's account was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/user/alice"
+```
+
+```json
+{
+  "success": true,
+  "user": {
+    "name": "alice",
+    "image": "https://lh3.googleusercontent.com/a/example",
+    "totalScore": 3750,
+    "rank": 1,
+    "level": "[0x7][Flag Conqueror]",
+    "completedQuestions": 28,
+    "badges": 5,
+    "customBadges": [],
+    "createdAt": "2024-01-15T08:30:00.000Z",
+    "memberSince": 2024
+  }
+}
+```
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `404 Not Found` | No user was found with the given username. |

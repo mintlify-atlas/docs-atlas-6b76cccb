@@ -1,0 +1,278 @@
+---
+title: "Badges API — list and manage player badges"
+description: "The badges API lets you retrieve badge templates and assigned badges. Admin endpoints allow creating badge templates and assigning badges to users."
+---
+
+FlagForge supports two types of badges: system badges earned automatically by hitting solve milestones, and custom badges assigned manually by admins. The badges API lets you retrieve profile badges as embeddable images and — for admins — manage badge templates and assignments.
+
+## GET /api/badge/[username]/svg
+
+Generate and return a player's profile badge as an SVG image. No authentication is required. The badge displays the player's name, level, rank, score, solved challenge count, and avatar. Badge color is determined by the player's total score.
+
+### Path parameters
+
+<ParamField path="username" type="string" required>
+  The player's display name. Hyphens are treated as spaces during the lookup.
+</ParamField>
+
+### Response
+
+Returns an `image/svg+xml` response. The image is cached for 5 minutes (`Cache-Control: public, max-age=300`).
+
+### Badge color thresholds
+
+| Score | Color |
+|-------|-------|
+| 3000+ | Yellow (`#EAB308`) — Flag Conqueror |
+| 2000 – 2999 | Red (`#DC2626`) — Forger |
+| 1500 – 1999 | Orange (`#EA580C`) — Cipher Hunter |
+| 1000 – 1499 | Purple (`#7C3AED`) — Hacker |
+| 500 – 999 | Green (`#059669`) — Codebreaker |
+| 200 – 499 | Blue (`#2563EB`) — Scout |
+| 0 – 199 | Gray (`#6B7280`) — Newbie |
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/badge/alice/svg" \
+  --output alice-badge.svg
+```
+
+You can embed the badge directly in a GitHub README or any HTML page:
+
+```html
+<img src="https://flagforgectf.com/api/badge/alice/svg" alt="alice's FlagForge badge" />
+```
+
+---
+
+## GET /api/badge/[username]/png
+
+Identical to the SVG endpoint but returns a `image/svg+xml` response rendered as a PNG-compatible SVG. Use this endpoint in contexts where SVG embedding is not supported.
+
+### Path parameters
+
+<ParamField path="username" type="string" required>
+  The player's display name.
+</ParamField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/badge/alice/png" \
+  --output alice-badge.png
+```
+
+---
+
+## POST /api/admin/assign-badge
+
+Assign a badge to a user. Requires the `Admin` role. The badge is recorded as an `AssignedBadge` document and added to the user's `customBadges` array so it appears on their profile immediately.
+
+<Warning>
+This endpoint requires an Admin session. Non-admin requests return `401 Unauthorized` or `403 Forbidden`.
+</Warning>
+
+### Request body
+
+The endpoint accepts two formats. You can send the badge fields directly at the top level, or nest them under a `badge` object.
+
+**Direct format:**
+
+<ParamField body="userId" type="string" required>
+  The MongoDB `_id` of the user receiving the badge.
+</ParamField>
+
+<ParamField body="badgeId" type="string" required>
+  A string identifier for the badge. For template badges, this is typically the badge name.
+</ParamField>
+
+<ParamField body="badgeType" type="string" default="template">
+  Badge type: `template` for a predefined badge, or `custom` for a badge image uploaded via the badge images endpoint.
+</ParamField>
+
+<ParamField body="assignedBy" type="string" default="system">
+  The name or email of the admin performing the assignment.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the assignment, stored on the badge record.
+</ParamField>
+
+**Nested format (used by the admin UI):**
+
+<ParamField body="userId" type="string" required>
+  The MongoDB `_id` of the user receiving the badge.
+</ParamField>
+
+<ParamField body="badge" type="object" required>
+  Badge details nested under a `badge` key.
+
+  <Expandable title="badge object fields">
+    <ResponseField name="name" type="string">
+      Badge name (used as the badge identifier).
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Badge description shown on the profile.
+    </ResponseField>
+    <ResponseField name="icon" type="string">
+      Icon name or URL for the badge.
+    </ResponseField>
+    <ResponseField name="color" type="string">
+      Hex color for the badge display.
+    </ResponseField>
+    <ResponseField name="assignedBy" type="string">
+      The assigning admin's identifier.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+### Response fields
+
+**Success (`201 Created`):**
+
+<ResponseField name="success" type="boolean">
+  `true`
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message, e.g. `"Badge \"CTF Champion\" assigned successfully"`.
+</ResponseField>
+
+<ResponseField name="assignmentId" type="string">
+  MongoDB `_id` of the new `AssignedBadge` document.
+</ResponseField>
+
+<ResponseField name="badge" type="object">
+  Summary of the assigned badge: `id`, `name`, and `type`.
+</ResponseField>
+
+### Error responses
+
+| Status | Condition |
+|--------|-----------|
+| `400 Bad Request` | Missing or invalid `userId` or `badgeId`. |
+| `401 Unauthorized` | Not signed in. |
+| `403 Forbidden` | Signed in but not an Admin. |
+| `409 Conflict` | The badge is already assigned to this user. |
+
+### Example
+
+```bash
+curl -X POST "https://flagforgectf.com/api/admin/assign-badge" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: next-auth.session-token=<admin-session>" \
+  -d '{
+    "userId": "665a1f2e3c4b5d6e7f8a9b0c",
+    "badgeId": "CTF Champion",
+    "assignedBy": "admin@example.com",
+    "reason": "Winner of Spring 2024 event"
+  }'
+```
+
+```json
+{
+  "success": true,
+  "message": "Badge \"CTF Champion\" assigned successfully",
+  "assignmentId": "6660abc123def456789abc12",
+  "badge": {
+    "id": "CTF Champion",
+    "name": "CTF Champion",
+    "type": "template"
+  }
+}
+```
+
+---
+
+## GET /api/admin/assign-badge
+
+List badge assignments. Requires the `Admin` role. Returns all active assignments, or those for a specific user when `userId` is provided.
+
+### Query parameters
+
+<ParamField query="userId" type="string">
+  Filter assignments to a specific user by their MongoDB `_id`. Omit to return all active assignments.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">
+  `true` on success.
+</ResponseField>
+
+<ResponseField name="assignments" type="object[]">
+  Array of active badge assignment records.
+</ResponseField>
+
+<ResponseField name="count" type="number">
+  Total number of assignments returned.
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/admin/assign-badge?userId=665a1f2e3c4b5d6e7f8a9b0c" \
+  -H "Cookie: next-auth.session-token=<admin-session>"
+```
+
+```json
+{
+  "success": true,
+  "assignments": [
+    {
+      "_id": "6660abc123def456789abc12",
+      "userId": "665a1f2e3c4b5d6e7f8a9b0c",
+      "badgeId": "CTF Champion",
+      "badgeName": "CTF Champion",
+      "badgeDescription": "Winner of the Spring 2024 event",
+      "badgeIcon": "trophy",
+      "badgeColor": "#EAB308",
+      "assignedBy": "admin@example.com",
+      "reason": "Winner of Spring 2024 event",
+      "isActive": true,
+      "assignedAt": "2024-05-01T12:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+## DELETE /api/admin/assign-badge
+
+Remove a badge assignment. The assignment is soft-deleted (marked `isActive: false`) and the badge is removed from the user's `customBadges` array. Requires the `Admin` role.
+
+### Query parameters
+
+<ParamField query="id" type="string">
+  The `_id` of the `AssignedBadge` document to remove.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  The user's `_id`. Required when `id` is not provided.
+</ParamField>
+
+<ParamField query="badgeId" type="string">
+  The badge identifier. Required when `id` is not provided.
+</ParamField>
+
+<Note>
+Provide either `id` alone, or both `userId` and `badgeId` together. The request returns `400 Bad Request` if neither combination is supplied.
+</Note>
+
+### Example
+
+```bash
+curl -X DELETE \
+  "https://flagforgectf.com/api/admin/assign-badge?id=6660abc123def456789abc12" \
+  -H "Cookie: next-auth.session-token=<admin-session>"
+```
+
+```json
+{
+  "success": true,
+  "message": "Badge assignment removed successfully"
+}
+```

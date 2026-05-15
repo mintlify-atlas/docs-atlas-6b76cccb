@@ -1,0 +1,57 @@
+---
+title: "FlagForge: Open-Source CTF Platform for Everyone"
+description: "FlagForge is a beginner-friendly CTF platform built with Next.js and MongoDB. Host cybersecurity challenges with leaderboards, badges, and dynamic flags."
+---
+
+FlagForge is an open-source Capture The Flag (CTF) platform built to make hosting and participating in cybersecurity challenges accessible to everyone. This page gives you an overview of what FlagForge is, who it's designed for, and what you can do with it.
+
+## What is FlagForge?
+
+FlagForge is a full-stack web application that lets you host, manage, and participate in CTF competitions. Whether you're a student sharpening your skills, an organizer running an event, or a club setting up a private competition, FlagForge provides everything you need in a single deployable platform.
+
+Players browse challenges organized by category — Web, Crypto, Forensics, Pwn, and more — submit flags in the `flag{...}` format, and track their progress on a real-time leaderboard. Admins create and manage challenges, assign badges, and control who has access to admin features.
+
+FlagForge is licensed under the GPL-3.0 license and is free to self-host.
+
+## Technology stack
+
+FlagForge is built with the following technologies:
+
+| Technology | Role |
+|---|---|
+| **Next.js** | Full-stack React framework for pages and API routes |
+| **TypeScript** | Type-safe language used throughout the codebase |
+| **MongoDB** | Document database for users, challenges, and scores |
+| **NextAuth.js** | Authentication via Google OAuth with JWT sessions |
+| **Tailwind CSS** | Utility-first CSS for the UI |
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Challenges" icon="flag" href="/features/challenges">
+    Browse and solve challenges across multiple categories. Each challenge includes a description, optional file attachments, and configurable hints.
+  </Card>
+  <Card title="Flag submission" icon="paper-plane" href="/features/flag-submission">
+    Submit flags in the `flag{...}` format. The platform validates your answer instantly and updates your score.
+  </Card>
+  <Card title="Dynamic flags" icon="key" href="/features/dynamic-flags">
+    Each user receives a unique flag variant, preventing flag sharing and ensuring fair scoring across all participants.
+  </Card>
+  <Card title="Real-time leaderboard" icon="ranking-star" href="/features/leaderboard">
+    Track scores and rankings live as participants solve challenges throughout the competition.
+  </Card>
+  <Card title="Badges" icon="medal" href="/features/badges">
+    Earn badges for solving challenges, reaching milestones, and demonstrating skills. Admins can create and assign custom badges.
+  </Card>
+  <Card title="Admin dashboard" icon="shield-halved" href="/admin/overview">
+    Create and manage challenges, control user roles, and assign badges from a dedicated admin interface.
+  </Card>
+</CardGroup>
+
+## Next steps
+
+Ready to start using FlagForge? Follow the quickstart guide to create your account, browse challenges, and submit your first flag.
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Create your account and submit your first flag in minutes.
+</Card>

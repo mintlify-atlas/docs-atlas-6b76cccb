@@ -1,0 +1,81 @@
+---
+title: "Leaderboard API — fetch ranked player scores"
+description: "GET /api/leaderboard returns all users ranked by total score. Use this endpoint to display standings or integrate FlagForge scores into external tools."
+---
+
+The leaderboard API returns the top 50 players ranked by their cumulative score. You can use this endpoint to build external scoreboards, integrate FlagForge standings into Discord bots, or display rankings in your own UI. No authentication is required.
+
+## GET /api/leaderboard
+
+Return the top 50 players sorted by `totalScore` in descending order.
+
+<Note>
+Scores update in real time as players submit correct flags. Each successful flag submission increments the solver's `totalScore` immediately, so this endpoint always reflects the current live standings.
+</Note>
+
+### Response
+
+The response is a JSON array of player objects. The array is ordered from highest to lowest score.
+
+<ResponseField name="name" type="string">
+  The player's display name.
+</ResponseField>
+
+<ResponseField name="totalScore" type="number">
+  The player's cumulative score across all solved challenges.
+</ResponseField>
+
+<ResponseField name="image" type="string">
+  URL to the player's avatar image. May be `null` if the user has no avatar set.
+</ResponseField>
+
+<ResponseField name="roomsCompleted" type="number">
+  Number of challenges the player has solved.
+</ResponseField>
+
+<ResponseField name="rank" type="number">
+  The player's current rank (1-indexed). Rank `1` is the highest-scoring player.
+</ResponseField>
+
+<ResponseField name="slug" type="string">
+  URL-safe version of the player's name (spaces replaced with hyphens). Use this to construct links to the player's public profile at `/user/[slug]`.
+</ResponseField>
+
+### Example
+
+```bash
+curl "https://flagforgectf.com/api/leaderboard"
+```
+
+```json
+[
+  {
+    "name": "alice",
+    "totalScore": 3750,
+    "image": "https://lh3.googleusercontent.com/a/example",
+    "roomsCompleted": 28,
+    "rank": 1,
+    "slug": "alice"
+  },
+  {
+    "name": "bob smith",
+    "totalScore": 2100,
+    "image": null,
+    "roomsCompleted": 15,
+    "rank": 2,
+    "slug": "bob-smith"
+  },
+  {
+    "name": "charlie",
+    "totalScore": 900,
+    "image": "https://lh3.googleusercontent.com/a/another-example",
+    "roomsCompleted": 9,
+    "rank": 3,
+    "slug": "charlie"
+  }
+]
+```
+
+<Tip>
+To link directly to a player's profile page from the leaderboard data, use the `slug` field: `https://flagforgectf.com/user/{slug}`. You can also embed a player's score badge as an image using `GET /api/badge/{username}/svg` or `GET /api/badge/{username}/png`.
+</Tip>

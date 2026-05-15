@@ -1,28 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "FlagForge",
+  "projectType": "saas",
+  "projectName": "FlagForge",
+  "projectDescription": "A beginner-friendly, open-source Capture The Flag (CTF) platform for hosting, managing, and solving cybersecurity challenges with leaderboards, badges, and dynamic flag support.",
   "theme": "almond",
-  "colors": {
-    "primary": "#cb794b",
-    "light": "#8c9464",
-    "dark": "#272522"
-  },
-  "favicon": "https://media.brand.dev/0c2b7089-bbdb-405f-8058-55e1b4aba257.jpg",
-  "logo": {
-    "light": "https://media.brand.dev/a1d36da4-d355-4eaf-82a0-5efada8b029e.svg",
-    "dark": "https://media.brand.dev/a1d36da4-d355-4eaf-82a0-5efada8b029e.svg"
-  },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/flagForgeCTF/flagForge"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/flagForgeCTF/flagForge"
-    }
-  },
+  "primaryColor": "#cb794b",
+  "lightColor": "#8c9464",
+  "darkColor": "#272522",
   "navigation": {
     "tabs": [
       {
@@ -96,5 +79,33 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "Dynamic per-user flag generation (GUID, TEAM_HASH, LEET, CLEET types)",
+    "Real-time leaderboard with score tracking",
+    "Badge and achievement system",
+    "Hint system with configurable point deductions",
+    "Time-limited challenges with automatic expiry",
+    "Google OAuth and NextAuth authentication",
+    "Admin dashboard for challenge and user management",
+    "Discord webhook notifications for new challenges",
+    "AI chatbot integration for player support",
+    "Blog/resources section via Notion CMS"
+  ],
+  "publicApiSurface": [
+    "GET /api/problems - List challenges with pagination and category filter",
+    "POST /api/problems - Create a new challenge (admin only)",
+    "GET /api/problems/[id] - Get challenge details",
+    "POST /api/problems/[id] - Submit a flag for a challenge",
+    "POST /api/problems/dynamic-flag - Generate/retrieve a dynamic flag",
+    "GET /api/problems/[id]/hints - Get hints for a challenge",
+    "GET /api/leaderboard - Get leaderboard scores",
+    "GET /api/profile - Get current user profile",
+    "GET /api/user/[username] - Get public user profile",
+    "GET /api/categories - List challenge categories",
+    "GET /api/badge - Get badge information",
+    "POST /api/admin/assign-badge - Assign a badge to a user",
+    "GET /api/admin/dashboard-stats - Get admin dashboard statistics",
+    "GET /api/admin/users - Manage users (admin only)"
+  ]
 }
